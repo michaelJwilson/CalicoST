@@ -15,25 +15,34 @@ CalicoST is a probabilistic model that infers allele-specific copy number aberra
 The package has tested on the following Linux operating systems: SpringdaleOpenEnterprise 9.2 (Parma) and CentOS Linux 7 (Core).
 
 # Installation
-First setup a conda environment from the `environment.yml` file:
+First, setup a conda environment from the `environment.yml` file:
 ```
 cd CalicoST
+
 conda config --add channels conda-forge
 conda config --add channels bioconda
+
 conda env create -f environment.yml --name calicost_env
 ```
-
-Next download Eagle2 by
+Next download [Eagle2](https://alkesgroup.broadinstitute.org/Eagle/) by
 ```
 wget https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/Eagle_v2.4.1.tar.gz
 tar -xzf Eagle_v2.4.1.tar.gz
 ```
-
-Then install Startle by
+Next, we need to install [Startle](https://github.com/raphael-group/startle).  Its dependencies
+include [LEMON](https://lemon.cs.elte.hu/trac/lemon/wiki/InstallLinux), [CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer),
+perl and python3.  We do so with conda
+```
+conda install -c schmidt73 startle
+```
+or by building from source,
 ```
 git clone --recurse-submodules https://github.com/raphael-group/startle.git
+
 cd startle
+
 mkdir build; cd build
+
 cmake -DLIBLEMON_ROOT=<lemon path>\
         -DCPLEX_INC_DIR=<cplex include path>\
         -DCPLEX_LIB_DIR=<cplex lib path>\
