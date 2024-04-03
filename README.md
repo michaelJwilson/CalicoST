@@ -105,7 +105,7 @@ CalicoST generates the following key files of each random initialization:
 * clone_labels.tsv: The inferred clone labels for each spot.
 * cnv_seglevel.tsv: Allele-specific copy numbers for each clone for each genome segment.
 * cnv_genelevel.tsv: The projected allele-specific copy numbers from genome segments to the covered genes.
-* cnv_diploid_seglevel.tsv, cnv_triploid_seglevel.tsv, cnv_tetraploid_seglevel.tsv, cnv_diploid_genelevel.tsv, cnv_triploid_genelevel.tsv, cnv_tetraploid_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy for each genome segment or each gene.
+* cnv_*_seglevel.tsv and cnv_*_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment or each gene.
 
 See the following examples of the key files.
 ```
@@ -150,14 +150,14 @@ AAK1    1       1       1       1       1       1
 AAMP    1       1       1       1       1       1
 ```
 
-CalicoST graphs the following plots for visualizing the inferred cancer clones in space and allele-specific copy number profiles for each random initialization.
-* plots/clone_spatial.pdf: The spatial distribution of inferred cancer clones and normal regions (grey color, clone 0 by default)
-* plots/rdr_baf_defaultcolor.pdf: The read depth ratio (RDR) and B allele frequency (BAF) along the genome for each clone. Higher RDR indicates higher total copy numbers, and a deviation-from-0.5 BAF indicates allele imbalance due to allele-specific CNAs.
-* plots/acn_genome.pdf: The default allele-specific copy numbers along the genome.
-* plots/acn_genome_diploid.pdf, plots/acn_genome_triploid.pdf, plots/acn_genome_tetraploid.pdf: Allele-specific copy numbers when enforcing a ploidy.
+CalicoST graphs the following plots to visualize the spatial distribution of the inferred cancer clones and allele-specific copy number profiles for each random initialization.
+* ```plots/clone_spatial.pdf```: The spatial distribution of inferred cancer clones and normal regions (grey color, clone 0 by default)
+* ```plots/rdr_baf_defaultcolor.pdf```: The Read Depth Ratio (RDR) and B-Allele Frequency (BAF) along the genome for each clone.  Higher RDR indicates higher total copy numbers and BAF deviations from 0.5 indicates allele imbalance due to allele-specific CNAs.
+* ```plots/acn_genome.pdf```: The default allele-specific copy numbers along the genome.
+* ```plots/acn_genome_*.pdf```: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid}.
 
 The allele-specific copy number plots have the following color legend.
-<p align="center">
+<p align="left">
 <img src="https://github.com/raphael-group/CalicoST/blob/main/docs/_static/img/acn_color_palette.png?raw=true" width="20%" height="auto"/>
 </p>
 
@@ -170,7 +170,7 @@ CalicoST uses the following command-line packages and python for extracting the 
 * pysam
 * snakemake
 
-CalicoST uses the following packages for the remaining steps to infer allele-specific copy numbers and cancer clones:
+As indicated by the provided environment.yaml and setup.py, CalicoST uses the following packages for the remaining steps to infer allele-specific copy numbers and cancer clones:
 * numpy
 * scipy
 * pandas
