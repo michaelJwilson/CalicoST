@@ -75,8 +75,8 @@ Check out our [readthedocs](https://calicost.readthedocs.io/en/latest/) for tuto
 ### Download data
 The simulated count matrices are available from [`examples/CalicoST_example.tar.gz`](https://github.com/raphael-group/CalicoST/blob/main/examples/CalicoST_example.tar.gz).
 CalicoST requires a reference SNP panel and phasing panel, which can be downloaded directly with wget and the links below
-* [SNP panel](https://downloads.sourceforge.net/project/cellsnp/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz?ts=gAAAAABmDbjZ1jaoDHw8fbmTQcP1y_WA9KfnTJH3aLrm0O7S4voV89YyU55O3jJdtO163_SpSBquChmB7dIl4dZ7pB-64L-W8A%3D%3D).
-* [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip)
+* [SNP panel](https://downloads.sourceforge.net/project/cellsnp/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz?ts=gAAAAABmDbjZ1jaoDHw8fbmTQcP1y_WA9KfnTJH3aLrm0O7S4voV89YyU55O3jJdtO163_SpSBquChmB7dIl4dZ7pB-64L-W8A%3D%3D) - 0.5GB in size.
+* [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip) - 9.0GB in size.
 
 Other SNP panels are available at [cellsnp-lite webpage](https://cellsnp-lite.readthedocs.io/en/latest/main/data.html).
 
