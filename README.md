@@ -4,15 +4,15 @@
 <img src="https://github.com/raphael-group/CalicoST/blob/main/docs/_static/img/overview4_combine.png?raw=true" width="100%" height="auto"/>
 </p>
 
-CalicoST is a probabilistic model that infers allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics.CalicoST has the following key features:
-1. Identifies allele-specific integer copy numbers for each transcribed region, revealing events such as copy neutral loss of heterozygosity (CNLOH) and mirrored subclonal CNAs that are invisible to total copy number analysis.
-2. Assigns each spot a clone label indicating whether the spot is primarily normal cells or a cancer clone with aberration copy number profile.
+[CalicoST](https://www.biorxiv.org/content/10.1101/2024.03.09.584244v1) is a probabilistic model that infers allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics.  CalicoST has the following key features:
+1. Identifies allele-specific integer copy numbers for each transcribed region, revealing events such as Copy Neutral Loss of Heterozygosity (CNLOH) and mirrored subclonal CNAs that are invisible to total copy number analysis.
+2. Assigns each spot a clone label indicating whether the spot is primarily normal cells or a cancer clone with an aberration copy number profile.
 3. Infers a phylogeny relating the identified cancer clones as well as a phylogeography that combines genetic evolution and spatial dissemination of clones.
-4. Handles normal cell admixture in SRT technologies hat are not single-cell resolution (e.g. 10x Genomics Visium) to infer more accurate allele-specific copy numbers and cancer clones.
-5.  Simultaneously analyzes multiple regional or aligned SRT slices from the same tumor.
+4. Handles normal cell admixture in SRT technologies that are not single-cell resolution (e.g. 10x Genomics Visium) to ensure more accurate allele-specific copy numbers and cancer clones.
+5.  Simultaneously analyzes multiple regions or aligned SRT slices from the same tumor.
 
 # System requirements
-The package has tested on the following Linux operating systems: SpringdaleOpenEnterprise 9.2 (Parma) and CentOS Linux 7 (Core).
+The package has been tested on the following Linux operating systems: SpringdaleOpenEnterprise 9.2 (Parma) and CentOS Linux 7 (Core).
 
 # Installation
 First, setup a conda environment from the `environment.yml` file:
@@ -171,16 +171,28 @@ CalicoST uses the following command-line packages and python for extracting the 
 * snakemake
 
 As indicated by the provided environment.yaml and setup.py, CalicoST uses the following packages for the remaining steps to infer allele-specific copy numbers and cancer clones:
-* numpy
-* scipy
-* pandas
-* scikit-learn
-* scanpy
-* anndata
-* numba
-* tqdm
-* statsmodels
-* networkx
-* matplotlib
-* seaborn
-* snakemake
+<table>
+  <tr>
+    <td> <!-- Column 1 -->
+      <ul>
+        <li>snakemake</li>
+        <li>numpy</li>
+        <li>scipy</li>
+        <li>pandas</li>
+	<li>numba</li>
+	<li>tqdm</li>
+	<li>seaborn</li>
+      </ul>
+    </td>
+    <td> <!-- Column 2 -->
+      <ul>
+        <li>scikit-learn</li>
+        <li>scanpy</li>
+        <li>anndata</li>
+	<li>statsmodels</li>
+	<li>networkx</li>
+	<li>matplotlib</li>
+      </ul>
+    </td>
+  </tr>
+</table>
