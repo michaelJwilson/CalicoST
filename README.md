@@ -26,7 +26,7 @@ conda config --add channels bioconda
 
 conda env create -f environment.yml --name calicost_env
 
-conda activate calicost_env
+conda activate calicost
 ```
 Next download [Eagle2](https://alkesgroup.broadinstitute.org/Eagle/) by
 ```
@@ -68,7 +68,7 @@ Setting up the conda environments takes around 10 minutes on an HPC head node.  
 # Getting started
 CalicoST requires the coordinate information of genes and SNPs, the information files for GRCh38 genome are available from either of the [example data tarball](https://github.com/raphael-group/CalicoST/tree/main/examples). Specify the information file paths, your input SRT data paths, and running configurations in `config.yaml`, and then you can run CalicoST by
 ```
-snakemake --cores <number threads> --configfile config.yaml --snakefile calicost.smk all (--use-singularity) (--use-conda)
+snakemake --cores <number cores> --configfile config.yaml --snakefile calicost.smk all (--use-singularity) (--use-conda)
 ```
 
 Check out our [readthedocs](https://calicost.readthedocs.io/en/latest/) for tutorials on the simulated data and prostate cancer data.

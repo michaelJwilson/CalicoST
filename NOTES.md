@@ -7,3 +7,4 @@
 - in config, region_vcf -> region_vcf_gz
 - in config, phasing_panel -> phasing_panel_dir
 - in config, chromosomes=[18,19].
+- remove package specifications from setup.py
