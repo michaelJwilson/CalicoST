@@ -42,6 +42,7 @@ dependencies = [
 calicost = "calicost.calicost_main:main"
 parse_input = "calicost.parse_input:main"
 merge_bamfile = "calicost.utils.merge_bamfile:main"
+filter_snps_forphasing = "calicost.utils.filter_snps_forphasing:main"
 
 [project.optional-dependencies]
 docs = [

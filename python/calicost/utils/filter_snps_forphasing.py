@@ -1,5 +1,4 @@
 #!/bin/python
-
 import sys
 import numpy as np
 import pandas as pd
@@ -7,7 +6,15 @@ from pathlib import Path
 import argparse
 
 
-def main(cellsnplite_result_dir, eagle_out_dir, vaf_threshold=0.1):
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--cellsnplite_result_dir", help="cellsnplite result directory", type=str)
+    parser.add_argument("-o", "--eagle_out_dir", help="eagle output directory", type=str)
+    parser.add_argument("-v", "--vaf_threshold", help="vaf threshold", default=0.1, type=float)
+    args = parser.parse_args()
+
+    cellsnplite_result_dir, eagle_out_dir, vaf_threshold = args.cellsnplite_result_dir, args.eagle_out_dir, args.vaf_threshold
+    
     cellsnp_base = [str(x) for x in Path(cellsnplite_result_dir).glob("cellSNP.base*")][0]
     df_snp = pd.read_csv(cellsnp_base, comment="#", sep="\t", names=["tmpCHR", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO"])
     df_snp["CHROM"] = [f"chr{x}" for x in df_snp.tmpCHR]
@@ -46,9 +53,4 @@ def main(cellsnplite_result_dir, eagle_out_dir, vaf_threshold=0.1):
         fp.close()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--cellsnplite_result_dir", help="cellsnplite result directory", type=str)
-    parser.add_argument("-o", "--eagle_out_dir", help="eagle output directory", type=str)
-    parser.add_argument("-v", "--vaf_threshold", help="vaf threshold", default=0.1, type=float)
-    args = parser.parse_args()
-    main(args.cellsnplite_result_dir, args.eagle_out_dir, args.vaf_threshold)
+    main()
