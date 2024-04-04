@@ -13,6 +13,8 @@
 
 # System requirements
 The package has been tested on the following Linux operating systems: SpringdaleOpenEnterprise 9.2 (Parma) and CentOS Linux 7 (Core).
+Apple silicon installs can be facilitated with Rosetta emulation of the x86 instruction set, see e.g. [here](https://taylorreiter.github.io/2022-04-05-Managing-multiple-architecture-specific-installations-of-conda-on-apple-M1/) - note, brew install iterm2 as duplication of the terminal app. is no longer supported.  
+
 
 # Installation
 First, setup a conda environment from the `environment.yml` file:
@@ -66,7 +68,7 @@ Setting up the conda environments takes around 10 minutes on an HPC head node.  
 # Getting started
 CalicoST requires the coordinate information of genes and SNPs, the information files for GRCh38 genome are available from either of the [example data tarball](https://github.com/raphael-group/CalicoST/tree/main/examples). Specify the information file paths, your input SRT data paths, and running configurations in `config.yaml`, and then you can run CalicoST by
 ```
-snakemake --cores <number threads> --configfile config.yaml --snakefile calicost.smk all
+snakemake --cores <number threads> --configfile config.yaml --snakefile calicost.smk all (--use-singularity) (--use-conda)
 ```
 
 Check out our [readthedocs](https://calicost.readthedocs.io/en/latest/) for tutorials on the simulated data and prostate cancer data.
