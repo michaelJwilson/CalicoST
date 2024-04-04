@@ -1,0 +1,70 @@
+# NB apptainer build -F --build-arg-file ./config.txt ./calicost.sif ./calicost.def;
+#    images are cached to $HOME/.apptainer/cache
+# 
+Bootstrap: docker
+
+# NB https://hub.docker.com/r/continuumio/miniconda3
+From: continuumio/miniconda3
+Stage: build
+
+%arguments
+    ENV_NAME="minimal_calicost"
+
+%files
+    ./test_environment.yml /home/usr/test_environment.yml
+
+%environment
+    export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
+
+%post
+    apt-get update
+
+    # NB https://www.anaconda.com/blog/a-faster-conda-for-a-growing-community
+    conda config --set solver libmamba
+
+    # NB create this early to benefit from layer caching.
+    conda env create -f /home/usr/test_environment.yml --name {{ ENV_NAME }}
+
+    wget -O /home/usr/Eagle_v2.4.1.tar.gz https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/Eagle_v2.4.1.tar.gz
+    tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
+    mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
+
+    git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
+
+    # NB add -e for editable source
+    pip install --user /home/usr/CalicoST
+
+
+%runscript
+    /bin/bash --login
+
+    # NB when the container is invoked, arguments following the container name are passed to the runscript.
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+    echo {{ WELCOME_MESSAGE }}
+    
+    # conda activate {{ ENV_NAME }}
+    # cd /home/usr
+
+%test
+    echo "THIS IS A TEST"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container related to dev. for Calico-ST.
+
+# NB install binary into the final image
+# Bootstrap: library
+# From: alpine:3.9
+# Stage: final
+
+# NB install binary from stage one
+# %files from devel
+#  /root/hello /bin/hello
+# 
+# %runscript
+#  /bin/hello

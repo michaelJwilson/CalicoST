@@ -217,7 +217,7 @@ rule run_calicost:
     params:
         outputdir="{outputdir}",
         r="{r}"
-    threads: 16
+    threads: 32
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
     run:
