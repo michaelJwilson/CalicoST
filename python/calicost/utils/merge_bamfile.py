@@ -1,5 +1,4 @@
 #!/bin/python
-
 import sys
 import pysam
 import pandas as pd
@@ -34,7 +33,7 @@ def write_merged_deconvolution(input_deconvfile_list, suffix_list, output_deconv
     df_combined.to_csv(output_deconv, header=True, index=True, sep="\t")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--bamlistfile", help="cellsnplite result directory", type=str)
     parser.add_argument("-o", "--output_dir", help="output directory", type=str)
@@ -56,3 +55,7 @@ if __name__ == "__main__":
         input_deconvfile_list = df.deconv_filename.values
         suffix_list = df.suffix.values
         write_merged_deconvolution(input_deconvfile_list, suffix_list, f"{args.output_dir}/merged_deconvolution.tsv")
+
+
+if __name__ == "__main__":
+    main()

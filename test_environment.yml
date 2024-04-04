@@ -19,6 +19,7 @@ dependencies:
   - statsmodels==0.14.0
   - networkx==3.2.1
   - pysam==0.22.0
+  - cellsnp-lite=1.2.3
   - startle
   - ete3
   

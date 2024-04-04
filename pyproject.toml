@@ -41,6 +41,7 @@ dependencies = [
 [project.scripts]
 calicost = "calicost.calicost_main:main"
 parse_input = "calicost.parse_input:main"
+merge_bamfile = "calicost.utils.merge_bamfile:main"
 
 [project.optional-dependencies]
 docs = [

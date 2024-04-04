@@ -27,9 +27,9 @@ rule link_or_merge_bam:
     run:
         if "bamlist" in config:
             # merged BAM file
-            shell(f"python {config['calicost_dir']}/utils/merge_bamfile.py -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
-            shell(f"{config['samtools']} sort -m {params.samtools_sorting_mem} -o {output.bam} {params.outputdir}/unsorted_possorted_genome_bam.bam >> {log} 2>&1")
-            shell(f"{config['samtools']} index {output.bam}")
+            shell(f"python merge_bamfile -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
+            shell(f"samtools sort -m {params.samtools_sorting_mem} -o {output.bam} {params.outputdir}/unsorted_possorted_genome_bam.bam >> {log} 2>&1")
+            shell(f"samtools index {output.bam}")
             shell(f"rm -fr {params.outputdir}/unsorted_possorted_genome_bam.bam")
             
             # merged barcodes
@@ -99,8 +99,8 @@ rule pre_phasing:
         shell(f"python {config['calicost_dir']}/utils/filter_snps_forphasing.py -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
 	
         for chrname in config["chromosomes"]:
-            shell(f"{config['bgzip']} -f {params.outputdir}/phasing/chr{chrname}.vcf")
-            shell(f"{config['tabix']} -f {params.outputdir}/phasing/chr{chrname}.vcf.gz")
+            shell(f"bgzip -f {params.outputdir}/phasing/chr{chrname}.vcf")
+            shell(f"tabix -f {params.outputdir}/phasing/chr{chrname}.vcf.gz")
 
 
 rule phasing:
