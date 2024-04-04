@@ -12,7 +12,7 @@ samtools_sorting_mem: "4G"
 # cellsnp-lite
 UMItag: "Auto"
 cellTAG: "CB"
-nthreads_cellsnplite: 20
+nthreads_cellsnplite: 64
 region_vcf: "/u/congma/ragr-data/users/congma/references/snplist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
 # Eagle phasing
 phasing_panel: "/u/congma/ragr-data/users/congma/references/phasing_ref/1000G_hg38/"

@@ -8,3 +8,6 @@
 - in config, phasing_panel -> phasing_panel_dir
 - in config, chromosomes=[18,19].
 - remove package specifications from setup.py
+- threads to run_calicost:  limits threading in numpy?
+- spaceranger_dir: "output_dir"
+- wildcards: outputdir=calicost? NB prevents target rules.
