@@ -11,22 +11,7 @@ setuptools.setup(
         description='Allele-specific CNAs and spatial cancer clone inference',
         long_description='CalicoST infers allele-specific copy number aberrations and cancer clones in spatially resolved transcriptomics data',
         url='https://github.com/raphael-group/CalicoST',
-        install_requires=[
-            'numpy', 
-            'scipy', 
-            'pandas',
-            'scikit-learn',
-            'scanpy',
-            'anndata',
-            'numba',
-            'tqdm',
-            'statsmodels',
-            'networkx',
-            'matplotlib',
-            'seaborn',
-            'pysam',
-            'ete3'
-        ],
+        install_requires=[]
         include_package_data=True
 )
 
