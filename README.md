@@ -60,7 +60,7 @@ in the config.yaml, i.e. with the output of which cellsnp-lite.
 
 Finally, install CalicoST using pip in the root directory with
 ```
-pip install -e .
+pip install .
 ```
 Setting up the conda environments takes around 10 minutes on an HPC head node.  Make sure to use the
 [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) backend for conda to ensure the fastest builds.

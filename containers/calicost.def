@@ -35,7 +35,7 @@ Stage: build
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
     # NB add -e for editable source
-    pip install --user /home/usr/CalicoST
+    pip install /home/usr/CalicoST
 
 
 %runscript

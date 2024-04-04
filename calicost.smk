@@ -199,7 +199,7 @@ rule prepare_calicost_data:
     log:
         "{outputdir}/logs/prepare_calicost_data.log"
     run:
-        command = f"python {config['calicost_dir']}/src/calicost/parse_input.py -c {input[0]} >> {log} 2>&1"
+        command = f"parse_input -c {input[0]} >> {log} 2>&1"
         shell(command)
 
 
@@ -221,7 +221,7 @@ rule run_calicost:
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
     run:
-        command = f"python {config['calicost_dir']}/src/calicost/calicost_main.py -c {input[0]} >> {log} 2>&1"
+        command = f"calicost -c {input[0]} >> {log} 2>&1"
 
 	shell(command)
         shell(f"echo {command} > {output}")
