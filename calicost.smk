@@ -94,9 +94,9 @@ rule pre_phasing:
     run:
         shell(f"mkdir -p {params.outputdir}/phasing")
 	
-        print(f"python {config['calicost_dir']}/utils/filter_snps_forphasing.py -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
+        print(f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
 	
-        shell(f"python {config['calicost_dir']}/utils/filter_snps_forphasing.py -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
+        shell(f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
 	
         for chrname in config["chromosomes"]:
             shell(f"bgzip -f {params.outputdir}/phasing/chr{chrname}.vcf")

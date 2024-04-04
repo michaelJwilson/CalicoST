@@ -171,7 +171,7 @@ def cell_by_gene_lefthap_counts_v2(df_cell_snp, hg_table_file, gene_list, barcod
     return cell_snp_Aallele, cell_snp_Ballele, snp_gene_list, unique_snp_ids
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--cellsnplite_result_dir", help="cellsnplite result directory", type=str)
     parser.add_argument("-e", "--eagle_out_dir", help="eagle output directory", type=str)
@@ -185,3 +185,7 @@ if __name__ == "__main__":
     scipy.sparse.save_npz(f"{args.outputdir}/cell_snp_Aallele.npz", cell_snp_Aallele)
     scipy.sparse.save_npz(f"{args.outputdir}/cell_snp_Ballele.npz", cell_snp_Ballele)
     np.save(f"{args.outputdir}/unique_snp_ids.npy", unique_snp_ids)
+
+
+if __name__ == "__main__":
+    main()
