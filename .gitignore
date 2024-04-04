@@ -130,3 +130,6 @@ dmypy.json
 
 # Apptainer build containers
 *.sif
+
+#
+build/
