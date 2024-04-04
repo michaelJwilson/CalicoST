@@ -1,7 +1,7 @@
 calicost_dir: "/u/congma/ragr-data/users/congma/Codes/CalicoST/"
 eagledir: "/u/congma/ragr-data/users/congma/environments/Eagle_v2.4.1/"
 
-# running parameters
+# runtime parameters
 # samtools sort (only used when jointly calling from multiple slices)
 samtools_sorting_mem: "4G"
 

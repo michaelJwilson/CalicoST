@@ -88,6 +88,7 @@ Gunzip the downloaded example data and replace the following paths in the provid
 * eagledir: the path to the downloaded Eagle2 directory
 * region_vcf: the path to the downloaded SNP panel.
 * phasing_panel: the path to the downloaded and unzipped phasing panel.
+* spaceranger_dir: ** TODO **
 
 To avoid falling into local maxima in CalicoST's optimization objective, we recommend running CalicoST with multiple random initializations that are specified by the `random_state` variable in `example_config.yaml`. The provided one uses five random initializations, but may be lessened for a test of the installation.
 

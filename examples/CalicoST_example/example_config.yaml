@@ -1,0 +1,41 @@
+# path to executables or their parent directories
+calicost_dir: "/Genomics/argo/users/mw9568/repos/CalicoST"
+cellsnplite: "/Genomics/argo/users/mw9568/.conda/envs/calicost/bin/cellsnp-lite"
+samtools: "samtools"
+bgzip: "bgzip"
+tabix: "tabix"
+eagledir: "/Genomics/argo/users/mw9568/Eagle_v2.4.1/"
+
+# running parameters
+# samtools sort (only used when joingly calling from multiple slices)
+samtools_sorting_mem: "4G"
+# cellsnp-lite
+UMItag: "Auto"
+cellTAG: "CB"
+nthreads_cellsnplite: 32
+region_vcf: "/scratch/tmp/mw9568/calico/CalicoST_example/snp_panel/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
+# Eagle phasing
+phasing_panel: "/scratch/tmp/mw9568/calico/CalicoST_example/phasing/1000G_hg38"
+
+chromosomes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+# input
+spaceranger_dir: "/scratch/tmp/mw9568/calico/CalicoST_example/outs/"
+
+# CalicoST parameters
+random_state: [0]
+geneticmap_file: "GRCh38_resources/genetic_map_GRCh38_merged.tab"
+hgtable_file: "GRCh38_resources/hgTables_hg38_gencode.txt"
+filtergenelist_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/ig_gene_list.txt"
+filterregion_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/HLA_regions.bed"
+tumorprop_file: None
+
+n_clones: 3
+n_states: 7
+t: "1-1e-5"
+spatial_weight: 1.0
+np_threshold: 1.0
+
+# output
+output_snpinfo: "/scratch/tmp/mw9568/calico/CalicoST_example/snpinfo"
+outputdir_calicost: "/scratch/tmp/mw9568/calico/CalicoST_example/calicost"

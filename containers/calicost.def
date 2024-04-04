@@ -60,7 +60,7 @@ Stage: build
 %help
     This is a basic container related to dev. for Calico-ST.
 
-# NB install binary into the final image
+# NB install binaries into the final image
 # Bootstrap: library
 # From: alpine:3.9
 # Stage: final
