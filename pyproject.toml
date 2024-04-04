@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "CalicoST"
+name = "calicost"
 version = "1.0.0"
 authors = [
   { name="Cong Ma", email="congma@princeton.edu" },
@@ -38,6 +38,10 @@ dependencies = [
   'ete3'
 ]
 
+[project.scripts]
+calicost = "calicost.calicost_main:main"
+parse_input = "calicost.parse_input:main"
+
 [project.optional-dependencies]
 docs = [
     "ipython",
@@ -57,5 +61,5 @@ docs = [
 "Homepage" = "https://github.com/raphael-group/CalicoST"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["python"]
 include = ["calicost*"]

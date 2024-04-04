@@ -248,10 +248,10 @@ def run_parse_n_load(config):
     return load_tables_to_matrices(config["output_dir"])
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--configfile", help="configuration file of CalicoST", required=True, type=str)
-    
+
     args = parser.parse_args()
 
     try:
@@ -260,10 +260,14 @@ if __name__ == "__main__":
         config = read_joint_configuration_file(args.configfile)
 
     logger.info("Configurations:")
-    
+
     for k in sorted(list(config.keys())):
         logger.info(f"\t{k} : {config[k]}")
 
     run_parse_n_load(config)
 
     logger.info(f"Done.")
+    
+
+if __name__ == "__main__":
+    main()
