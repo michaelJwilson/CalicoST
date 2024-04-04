@@ -221,7 +221,7 @@ rule run_calicost:
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
     run:
-        command = f"OMP_NUM_THREADS=1 python {config['calicost_dir']}/src/calicost/calicost_main.py -c {input[0]} >> {log} 2>&1"
+        command = f"python {config['calicost_dir']}/src/calicost/calicost_main.py -c {input[0]} >> {log} 2>&1"
 
 	shell(command)
         shell(f"echo {command} > {output}")

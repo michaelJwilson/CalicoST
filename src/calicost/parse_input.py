@@ -225,14 +225,14 @@ def load_tables_to_matrices(output_dir):
 
 def run_parse_n_load(config):
     expected = ["table_bininfo", "table_rdrbaf", "table_meta", "adjacency_mat", "smooth_mat", "exp_counts"]
-    files_exits = all(map(lambda name:  Path(f"{config['output_dir']}/parsed_inputs/{name}.csv.gz").exists(), expected))
+    files_exist = all(map(lambda name:  Path(f"{config['output_dir']}/parsed_inputs/{name}.csv.gz").exists(), expected))
         
     if not files_exist:
         # NB process to tables
         table_bininfo, table_rdrbaf, table_meta, exp_counts, adjacency_mat, smooth_mat, df_gene_snp = parse_visium(config)
         # table_bininfo, table_rdrbaf, table_meta, exp_counts, adjacency_mat, smooth_mat = parse_hatchetblock(config, cellsnplite_dir, bb_file)
 
-        Path({"{config['output_dir']}/parsed_inputs").mkdir(parents=True, exist_ok=True)
+        Path("{config['output_dir']}/parsed_inputs").mkdir(parents=True, exist_ok=True)
                 
         table_bininfo.to_csv( f"{config['output_dir']}/parsed_inputs/table_bininfo.csv.gz", header=True, index=False, sep="\t" )
         table_rdrbaf.to_csv( f"{config['output_dir']}/parsed_inputs/table_rdrbaf.csv.gz", header=True, index=False, sep="\t" )
