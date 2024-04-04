@@ -137,8 +137,7 @@ rule parse_final_snp:
     log:
         "{outputdir}/logs/parse_final_snp.log"
     run:
-        command = f"python {config['calicost_dir']}/utils/get_snp_matrix.py " + \
-            f"-c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
+        command = f"get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
         shell( command )
 
 
