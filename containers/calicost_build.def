@@ -37,7 +37,7 @@ Stage: build
 
     # TODO HACK don't rely on prefix, or python version.
     # NB add -e for editable source
-    pip install --prefix=/opt/conda/envs/{{ ENV_NAME }}/lib/python3.10/site-packages/ /home/usr/CalicoST
+    cd /home/usr/CalicoST; pip install -e .
 
 
 %runscript

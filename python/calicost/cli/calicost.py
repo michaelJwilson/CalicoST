@@ -17,12 +17,12 @@ from calicost.arg_parse import *
 from calicost.find_integer_copynumber import *
 from calicost.hmm_NB_BB_phaseswitch import *
 from calicost.hmrf import *
-from calicost.parse_input import *
 from calicost.phasing import *
 from calicost.utils_distribution_fitting import *
 from calicost.utils_hmrf import *
 from calicost.utils_IO import *
 from calicost.utils_plotting import *
+from calicost.cli.parse_input import run_parse_n_load
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger()

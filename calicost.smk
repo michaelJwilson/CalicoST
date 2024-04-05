@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import scipy
 import calicost.arg_parse
-import calicost.parse_input
 
 
 rule all:
