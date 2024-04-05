@@ -5,7 +5,7 @@ Bootstrap: docker
 
 # NB https://hub.docker.com/r/continuumio/miniconda3
 From: continuumio/miniconda3
-Stage: dev
+Stage: build
 
 %files
     ../test_environment.yml /home/usr/test_environment.yml
@@ -37,7 +37,7 @@ Stage: dev
 
 
 %runscript
-    /bin/bash --login
+    /bin/bash
 
     # NB when the container is invoked, arguments following the container name are passed to the runscript.
     echo "Arguments received: $*"
@@ -49,7 +49,7 @@ Stage: dev
     # cd /home/usr
 
 %test
-    echo "NO AVAILABLE TESTS"
+    echo "NO AVAILABLE TESTS FOR {{ ENV_NAME }}"
 
 %labels
     Author Michael J. Wilson
@@ -57,17 +57,3 @@ Stage: dev
 
 %help
     This is a basic container related to dev. for Calico-ST.
-
-"""
-Bootstrap: docker
-From: continuumio/miniconda3
-Stage: production
-
-# NB install binary from stage one
-%files from dev
-  /home/usr/bin/* /home/usr/bin/*
-  /opt/conda/envs/{{ ENV_NAME }}/bin/* /opt/conda/envs/{{ ENV_NAME }}/bin/*
-
-%runscript
-  echo {{ WELCOME_MESSAGE }}
-"""
