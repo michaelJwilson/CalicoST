@@ -7,17 +7,17 @@ Bootstrap: docker
 From: continuumio/miniconda3
 Stage: build
 
-%arguments
-    ENV_NAME="minimal_calicost"
-
 %files
     ../test_environment.yml /home/usr/test_environment.yml
 
-    # TODO 
+    # TODO HACK
     /Genomics/argo/users/mw9568/repos/CalicoST /home/usr/CalicoST
 
 %environment
     export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
+
+    # TODO HACK UGH
+    export PYTHONPATH=/opt/conda/envs/{{ ENV_NAME }}/lib/python3.10/site-packages/:$PYTHONPATH
 
 %post
     apt-get update
@@ -32,14 +32,18 @@ Stage: build
     tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
     mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
 
+    # TODO HACK
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
+    # TODO HACK don't rely on prefix, or python version.
     # NB add -e for editable source
-    pip install /home/usr/CalicoST
+    # rm -f /home/usr/CalicoST/python/calicost.egg-info
+
+    # cd /home/usr/CalicoST; pip install -e .
 
 
 %runscript
-    /bin/bash --login
+    /bin/bash
 
     # NB when the container is invoked, arguments following the container name are passed to the runscript.
     echo "Arguments received: $*"
@@ -51,7 +55,7 @@ Stage: build
     # cd /home/usr
 
 %test
-    echo "THIS IS A TEST"
+    echo "NO AVAILABLE TESTS FOR {{ ENV_NAME }}"
 
 %labels
     Author Michael J. Wilson
@@ -59,15 +63,3 @@ Stage: build
 
 %help
     This is a basic container related to dev. for Calico-ST.
-
-# NB install binaries into the final image
-# Bootstrap: library
-# From: alpine:3.9
-# Stage: final
-
-# NB install binary from stage one
-# %files from devel
-#  /root/hello /bin/hello
-# 
-# %runscript
-#  /bin/hello
