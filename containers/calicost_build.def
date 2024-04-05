@@ -9,6 +9,8 @@ Stage: dev
 
 %files
     ../test_environment.yml /home/usr/test_environment.yml
+
+    # TODO HACK
     /Genomics/argo/users/mw9568/repos/CalicoST /home/usr/CalicoST
 
 %environment
@@ -27,6 +29,7 @@ Stage: dev
     tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
     mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
 
+    # TODO HACK
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
     # NB add -e for editable source

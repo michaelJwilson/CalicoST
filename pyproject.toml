@@ -39,11 +39,11 @@ dependencies = [
 ]
 
 [project.scripts]
-calicost = "calicost.calicost_main:main"
-parse_input = "calicost.parse_input:main"
-merge_bamfile = "calicost.utils.merge_bamfile:main"
-filter_snps_forphasing = "calicost.utils.filter_snps_forphasing:main"
-get_snp_matrix = "calicost.utils.get_snp_matrix:main"
+calicost = "calicost.cli.calicost:main"
+parse_input = "calicost.cli.parse_input:main"
+merge_bamfile = "calicost.cli.merge_bamfile:main"
+filter_snps_forphasing = "calicost.cli.filter_snps_forphasing:main"
+get_snp_matrix = "calicost.cli.get_snp_matrix:main"
 
 [project.optional-dependencies]
 docs = [
