@@ -1,4 +1,4 @@
-name: minimal_calicost
+name: calicost
 channels:
   - bioconda
   - conda-forge

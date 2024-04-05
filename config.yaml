@@ -6,6 +6,7 @@ eagledir: "/u/congma/ragr-data/users/congma/environments/Eagle_v2.4.1/"
 region_vcf: "/u/congma/ragr-data/users/congma/references/snplist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
 phasing_panel: "/u/congma/ragr-data/users/congma/references/phasing_ref/1000G_hg38/"
 
+# 
 spaceranger_dir: "/u/congma/ragr-data/datasets/DingLab/HT112/U1/"
 
 geneticmap_file: "/u/congma/ragr-data/datasets/genetic_map/recomb-hg38/genetic_map_GRCh38_merged.tab"
