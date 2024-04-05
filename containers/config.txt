@@ -1,2 +1,1 @@
-ENV_NAME="minimal_calicost"
-WELCOME_MESSAGE="Welcome to Calico-ST"
+ENV_NAME="calicost"

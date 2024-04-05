@@ -17,7 +17,7 @@ Stage: build
     export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
 
     # TODO HACK UGH
-    export PYTHONPATH=/opt/conda/envs/{{ ENV_NAME }}/lib/python3.10/site-packages/:$PYTHONPATH
+    export PYTHONPATH=/home/usr/CalicoST/python/:$PYTHONPATH
 
 %post
     apt-get update
@@ -48,9 +48,7 @@ Stage: build
     # NB when the container is invoked, arguments following the container name are passed to the runscript.
     echo "Arguments received: $*"
     exec echo "$@"
-
-    echo {{ WELCOME_MESSAGE }}
-    
+   
     # conda activate {{ ENV_NAME }}
     # cd /home/usr
 
