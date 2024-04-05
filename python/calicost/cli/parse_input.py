@@ -232,7 +232,7 @@ def run_parse_n_load(config):
         table_bininfo, table_rdrbaf, table_meta, exp_counts, adjacency_mat, smooth_mat, df_gene_snp = parse_visium(config)
         # table_bininfo, table_rdrbaf, table_meta, exp_counts, adjacency_mat, smooth_mat = parse_hatchetblock(config, cellsnplite_dir, bb_file)
 
-        Path("{config['output_dir']}/parsed_inputs").mkdir(parents=True, exist_ok=True)
+        Path(f"{config['output_dir']}/parsed_inputs").mkdir(parents=True, exist_ok=True)
                 
         table_bininfo.to_csv( f"{config['output_dir']}/parsed_inputs/table_bininfo.csv.gz", header=True, index=False, sep="\t" )
         table_rdrbaf.to_csv( f"{config['output_dir']}/parsed_inputs/table_rdrbaf.csv.gz", header=True, index=False, sep="\t" )

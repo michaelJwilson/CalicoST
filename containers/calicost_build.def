@@ -16,6 +16,9 @@ Stage: build
 %environment
     export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
 
+    # TODO HACK UGH
+    export PYTHONPATH=/opt/conda/envs/{{ ENV_NAME }}/lib/python3.10/site-packages/:$PYTHONPATH
+
 %post
     apt-get update
 
@@ -32,8 +35,9 @@ Stage: build
     # TODO HACK
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
+    # TODO HACK don't rely on prefix, or python version.
     # NB add -e for editable source
-    pip install /home/usr/CalicoST
+    pip install --prefix=/opt/conda/envs/{{ ENV_NAME }}/lib/python3.10/site-packages/ /home/usr/CalicoST
 
 
 %runscript
