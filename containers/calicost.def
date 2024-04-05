@@ -39,7 +39,7 @@ Stage: build
     # NB add -e for editable source
     # rm -f /home/usr/CalicoST/python/calicost.egg-info
 
-    # cd /home/usr/CalicoST; pip install -e .
+    # cd /home/usr/CalicoST; pip install --no-deps -e .
 
 
 %runscript
