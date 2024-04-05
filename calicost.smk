@@ -1,4 +1,4 @@
-# NB snakemake --sdm conda -c 16 (--use-conda) (--use-singularity)
+# NB snakemake --sdm conda -c 16 (--keep-going) (--use-conda) (--use-singularity)
 # 
 import numpy as np
 import pandas as pd

@@ -58,7 +58,7 @@ Stage: dev
 %help
     This is a basic container related to dev. for Calico-ST.
 
-
+"""
 Bootstrap: docker
 From: continuumio/miniconda3
 Stage: production
@@ -70,3 +70,4 @@ Stage: production
 
 %runscript
   echo {{ WELCOME_MESSAGE }}
+"""
