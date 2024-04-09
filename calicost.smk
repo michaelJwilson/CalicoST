@@ -1,4 +1,4 @@
-# NB snakemake --sdm conda -c 16 (--keep-going) (--use-conda) (--use-singularity)
+# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity) (--sdm conda)
 # 
 import numpy as np
 import pandas as pd
@@ -196,9 +196,8 @@ rule prepare_calicost_data:
     threads: 16
     log:
         "{outputdir}/logs/prepare_calicost_data.log"
-    run:
-        command = f"parse_input -c {input[0]} >> {log} 2>&1"
-        shell(command)
+    shell:
+        "parse_input -c {input[0]} >> {log} 2>&1"
 
 
 rule run_calicost:

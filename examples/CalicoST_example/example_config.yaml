@@ -10,6 +10,7 @@ phasing_panel: "/scratch/tmp/mw9568/calico/CalicoST_example/phasing/1000G_hg38"
 # NB path to Visium 10x read-depth-ratio output
 spaceranger_dir: "/scratch/tmp/mw9568/calico/CalicoST_example/outs/"
 
+# Qs what are these?
 geneticmap_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/genetic_map_GRCh38_merged.tab"
 hgtable_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/hgTables_hg38_gencode.txt"
 filtergenelist_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/ig_gene_list.txt"
