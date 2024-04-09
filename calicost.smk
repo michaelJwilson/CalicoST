@@ -109,14 +109,14 @@ rule phasing:
     params:
         outputdir="{outputdir}",
         chrname="{chrname}",
-    threads: 16
     log:
-        "{outputdir}/logs/phasing_chr{chrname}.log",
+        "{outputdir}/logs/phasing_chr{chrname}.log"
+    threads: 16
     shell:
-        f"{config['eagledir']}/eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
-        f"--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
-        f"--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
-        f"--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
+        "eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
+        "--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
+        "--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
+        "--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
         
         
 rule parse_final_snp:
@@ -133,7 +133,7 @@ rule parse_final_snp:
     log:
         "{outputdir}/logs/parse_final_snp.log"
     shell:
-        f"get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
+        "get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
         
 
 rule write_calicost_configfile:

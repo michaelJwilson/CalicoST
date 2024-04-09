@@ -49,6 +49,7 @@ statsmodels = "0.14.0"
 numba = "0.57.1"
 pysam = "0.22.0"
 snakemake = "7.32.4"
+pulp = "<2.8"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^6.0.0"
