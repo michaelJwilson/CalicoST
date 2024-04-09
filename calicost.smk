@@ -113,15 +113,13 @@ rule phasing:
     threads: 16
     log:
         "{outputdir}/logs/phasing_chr{chrname}.log",
-    run:
-        command = f"{config['eagledir']}/eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
-            f"--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
-            f"--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
-            f"--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
-        shell(command)
+    shell:
+        f"{config['eagledir']}/eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
+        f"--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
+        f"--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
+        f"--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
         
-
-
+        
 rule parse_final_snp:
     input:
         "{outputdir}/genotyping/cellSNP.base.vcf.gz",
@@ -135,10 +133,9 @@ rule parse_final_snp:
     threads: 1
     log:
         "{outputdir}/logs/parse_final_snp.log"
-    run:
-        command = f"get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
-        shell( command )
-
+    shell:
+        f"get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
+        
 
 rule write_calicost_configfile:
     input:
@@ -167,6 +164,7 @@ rule write_calicost_configfile:
         if 'input_filelist' in calicost_config:
             assert 'bamlist' in config
             calicost_config['input_filelist'] = config['bamlist']
+	    
             if Path(f"{config['output_snpinfo']}/merged_deconvolution.tsv").exists():
                 calicost_config['tumorprop_file'] = f"{config['output_snpinfo']}/merged_deconvolution.tsv"
 
