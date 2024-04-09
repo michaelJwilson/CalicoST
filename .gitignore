@@ -134,3 +134,5 @@ dmypy.json
 #
 build/
 containers/deprecated/
+
+.snakemake/
