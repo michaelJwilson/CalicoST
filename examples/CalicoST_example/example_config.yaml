@@ -1,11 +1,13 @@
 # path to executables or their parent directories
-calicost_dir: "/Genomics/argo/users/mw9568/repos/CalicoST"
-cellsnplite: "/Genomics/argo/users/mw9568/.conda/envs/calicost/bin/cellsnp-lite"
-eagledir: "/Genomics/argo/users/mw9568/Eagle_v2.4.1/"
+# calicost_dir: "/Genomics/argo/users/mw9568/repos/CalicoST"
+# cellsnplite: "/Genomics/argo/users/mw9568/.conda/envs/calicost/bin/cellsnp-lite"
+# eagledir: "/Genomics/argo/users/mw9568/Eagle_v2.4.1/"
 
 # path to data resources
 region_vcf: "/scratch/tmp/mw9568/calico/CalicoST_example/snp_panel/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
-snppanel: "/scratch/tmp/mw9568/calico/CalicoST_example/phasing/1000G_hg38"
+phasing_panel: "/scratch/tmp/mw9568/calico/CalicoST_example/phasing/1000G_hg38"
+
+# NB path to Visium 10x read-depth-ratio output
 spaceranger_dir: "/scratch/tmp/mw9568/calico/CalicoST_example/outs/"
 
 geneticmap_file: "/scratch/tmp/mw9568/calico/CalicoST_example/GRCh38_resources/genetic_map_GRCh38_merged.tab"
@@ -19,16 +21,15 @@ tumorprop_file: None
 output_snpinfo: "/scratch/tmp/mw9568/calico/CalicoST_example/snpinfo"
 outputdir_calicost: "/scratch/tmp/mw9568/calico/CalicoST_example/calicost"
 
-
 # runtime parameters
-# samtools sort (only used when jointly calling from multiple slices)
-samtools_sorting_mem: "4G"
+samtools_sorting_mem: "4G" # only used when jointly calling from multiple slices
+
 # cellsnp-lite
 UMItag: "Auto"
 cellTAG: "CB"
 nthreads_cellsnplite: 32
 
-# Eagle phasing
+# eagle phasing
 chromosomes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
 # CalicoST parameters

@@ -1,8 +1,8 @@
-# path to executables or their parent directories
-calicost_dir: "/u/congma/ragr-data/users/congma/Codes/CalicoST/"
-eagledir: "/u/congma/ragr-data/users/congma/environments/Eagle_v2.4.1/"
+# DEPRECATE path to executables or their parent directories
+# calicost_dir: "/u/congma/ragr-data/users/congma/Codes/CalicoST/"
+# eagledir: "/u/congma/ragr-data/users/congma/environments/Eagle_v2.4.1/"
 
-# NB path to data/resources
+# NB path to 1K SNP definition for conditional calling
 region_vcf: "/u/congma/ragr-data/users/congma/references/snplist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
 phasing_panel: "/u/congma/ragr-data/users/congma/references/phasing_ref/1000G_hg38/"
 
@@ -15,13 +15,12 @@ filtergenelist_file: "/n/fs/ragr-data/users/congma/references/cellranger_refdata
 filterregion_file: "/n/fs/ragr-data/users/congma/references/cellranger_refdata-gex-GRCh38-2020-A/genes/HLA_regions.bed"
 tumorprop_file: "/u/congma/ragr-data/datasets/DingLab/HT112/HT112C1-T1_U1/ht112_u1_rctd_prop.tsv"
 
-# output                                                                                                                                                                       
+# output
 output_snpinfo: "/u/congma/ragr-data/users/congma/Datasets/test_calico/snpinfo"
 outputdir_calicost: "/u/congma/ragr-data/users/congma/Datasets/test_calico/calicost"
 
 # runtime parameters
-# samtools sort (only used when jointly calling from multiple slices)
-samtools_sorting_mem: "4G"
+samtools_sorting_mem: "4G" # (only used when jointly calling from multiple slices)
 
 # cellsnp-lite
 UMItag: "Auto"
