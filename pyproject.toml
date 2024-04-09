@@ -15,6 +15,7 @@ authors = [
 ]
 description = "Inferring allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics"
 readme = "README.md"
+license = "BSD-3-Clause"
 homepage = "https://github.com/raphael-group/CalicoST"
 repository = "https://github.com/raphael-group/CalicoST"
 classifiers = [
@@ -35,6 +36,7 @@ get_snp_matrix = "calicost.cli.get_snp_matrix:main"
 
 # TODO requires-python = ">=3.8"
 [tool.poetry.dependencies]
+python = "^3.8"
 numpy = "1.24.4"
 scipy = "1.11.3"
 pandas = "2.1.1"
@@ -42,6 +44,70 @@ scikit-learn = "1.3.2"
 scanpy = "1.9.6"
 anndata = "0.10.3"
 
-# [tool.poetry.group.analysis.dependencies]
-# "matplotlib",
-# "seaborn"
+[tool.poetry.group.test.dependencies]
+pytest = "^6.0.0"
+ruff = "^0.3.3"
+pre-commit = "^3.6.2"
+line-profiler = "^4.1.2"
+pytest-benchmark = "^4.0.0"
+pytest-xdist = "^3.5.0"
+memory-profiler = "^0.61.0"
+black = {extras = ["jupyter"], version = "^24.3.0"}
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra -q", "--strict-markers", "--strict-config"]
+# addopts += ["--showlocals"]
+xfail_strict = true
+# filterwarnings = ["error"]
+testpaths = [
+    "tests",
+]
+markers = [
+    "e2e: marks and end-to-end test that requires dedicated data (deselect with -m 'not e2e')",
+    "benchmark: marks a benchmarking test (deselect with -m 'not benchmark')"
+]
+
+[tool.ruff.lint]
+# a list of warnings and errors that flake8 should enable
+extend-select = [
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C4",          # flake8-comprehensions
+  "ICN",         # flake8-import-conventions
+  "PT",          # flake8-pytest-style
+  "PTH",         # flake8-use-pathlib
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "SIM",         # flake8-simplify
+  "T20",         # flake8-print
+  "NPY",         # NumPy specific rules
+  "PD",          # pandas-vet
+]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
