@@ -1,68 +1,47 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "calicost"
 version = "1.0.0"
 authors = [
-  { name="Cong Ma", email="congma@princeton.edu" },
-  { name="Metin Balaban", email="metin@princeton.edu" },
-  { name="Jingxian Liu", email="jingxian.liu@wustl.edu" },
-  { name="Siqi Chen", email="siqichen@wustl.edu" },
-  { name="Li Ding", email="lding@wustl.edu" },
-  { name="Ben Raphael", email="braphael@cs.princeton.edu" },
+  "Cong Ma <congma@princeton.edu>",
+  "Metin Balaban <metin@princeton.edu>",
+  "Jingxian Liu <jingxian.liu@wustl.edu>",
+  "Siqi Chen <siqichen@wustl.edu>",
+  "Li Ding <lding@wustl.edu>",
+  "Ben Raphael <braphael@cs.princeton.edu>",
 ]
 description = "Inferring allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics"
 readme = "README.md"
-requires-python = ">=3.8"
+homepage = "https://github.com/raphael-group/CalicoST"
+repository = "https://github.com/raphael-group/CalicoST"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-  'numpy', 
-  'scipy', 
-  'pandas',
-  'scikit-learn',
-  'scanpy',
-  'anndata',
-  'numba',
-  'tqdm',
-  'statsmodels',
-  'networkx',
-  'pysam',
-  'ete3'
+packages = [
+    { include = "calicost", from = "python"},
 ]
 
-[project.scripts]
+[tool.poetry.scripts]
 calicost = "calicost.cli.calicost:main"
 parse_input = "calicost.cli.parse_input:main"
 merge_bamfile = "calicost.cli.merge_bamfile:main"
 filter_snps_forphasing = "calicost.cli.filter_snps_forphasing:main"
 get_snp_matrix = "calicost.cli.get_snp_matrix:main"
 
-[project.optional-dependencies]
-docs = [
-    "ipython",
-    "ipywidgets>=8.0.0",
-    "sphinx>=5.3",
-    "sphinx-autodoc-annotation",
-    "sphinx-autodoc-typehints>=1.10.3",
-    "sphinx_rtd_theme",
-    "sphinxcontrib-bibtex>=2.3.0",
-    "sphinxcontrib-spelling>=7.6.2",
-    "nbsphinx>=0.8.1",
-    "myst-nb>=0.17.1",
-    "sphinx_copybutton>=0.5.0",
-    "matplotlib",
-    "seaborn",
-]
+# TODO requires-python = ">=3.8"
+[tool.poetry.dependencies]
+numpy = "1.24.4"
+scipy = "1.11.3"
+pandas = "2.1.1"
+scikit-learn = "1.3.2"
+scanpy = "1.9.6"
+anndata = "0.10.3"
 
-[project.urls]
-"Homepage" = "https://github.com/raphael-group/CalicoST"
-
-[tool.setuptools.packages.find]
-where = ["python"]
-include = ["calicost*"]
+# [tool.poetry.group.analysis.dependencies]
+# "matplotlib",
+# "seaborn"
