@@ -34,7 +34,6 @@ merge_bamfile = "calicost.cli.merge_bamfile:main"
 filter_snps_forphasing = "calicost.cli.filter_snps_forphasing:main"
 get_snp_matrix = "calicost.cli.get_snp_matrix:main"
 
-# TODO requires-python = ">=3.8"
 [tool.poetry.dependencies]
 python = "3.10"
 numpy = "1.24.4"

@@ -1,1 +1,1 @@
-ENV_NAME="calicost"
+ENV_NAME="mini_calicost"

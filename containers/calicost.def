@@ -8,32 +8,34 @@ From: continuumio/miniconda3
 Stage: build
 
 %files
-    ../test_environment.yml /home/usr/test_environment.yml
+    ../mini_calicost.yaml /home/usr/mini_calicost.yaml
 
-    # TODO HACK replace with git clone on PR
+    # TODO HACK replace with git clone on PR from branch
     /Genomics/argo/users/mw9568/repos/CalicoST /home/usr/CalicoST
 
 %environment
     export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
+
+    # NB pip install from source
     export PYTHONPATH=/home/usr/CalicoST/python/:$PYTHONPATH
 
 %post
     apt-get update && apt-get install -y emacs
 
-    # NB https://www.anaconda.com/blog/a-faster-conda-for-a-growing-community
-    conda config --set solver libmamba
-
-    # NB create this early to benefit from layer caching.
-    conda env create -f /home/usr/test_environment.yml --name {{ ENV_NAME }}
-
+    # NB create early to benefit from layer caching.
     wget -O /home/usr/Eagle_v2.4.1.tar.gz https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/Eagle_v2.4.1.tar.gz
     tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
     mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
 
-    # TODO HACK
+    # NB see https://www.anaconda.com/blog/a-faster-conda-for-a-growing-community
+    conda config --set solver libmamba
+
+    conda env create -f /home/usr/mini_calicost.yaml --name {{ ENV_NAME }}
+
+    # TODO HACK see equivalent cp above.
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
-    # TODO HACK
+    # TODO HACK shouldn't be necessary
     rm -rf /home/usr/CalicoST/python/calicost.egg-info
 
     # NB add -e for editable source

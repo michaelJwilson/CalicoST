@@ -1,3 +1,18 @@
+# Usage:
+#   conda env create -f mini_calicost.yaml
+#
+# TODO
+# - python-igraph
+# - leidenalg
+# - ipykernel
+# - seaborn
+# - conda-forge::lemon
+# - ca-certificates
+# - certifi
+# - openssl
+# - snakemake
+# - ete3
+#
 name: mini_calicost
 channels:
   - conda-forge
@@ -17,17 +32,8 @@ dependencies:
   - statsmodels=0.14.0
   - matplotlib=3.7.3
   - networkx=3.2.1
-  - seaborn
-  - ca-certificates
-  - certifi
-  - openssl
   - numba=0.57.1
   - scanpy=1.9.6
-  - python-igraph
-  - leidenalg
   - anndata=0.10.3
-  - snakemake
-  - ipykernel
   - pysam=0.22.0
-  - conda-forge::lemon
-  - ete3
+  - snakemake=7.32.4
