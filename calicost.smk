@@ -70,7 +70,7 @@ rule genotype:
         "{outputdir}/logs/genotyping.log"
     run:
         shell(f"mkdir -p {params.outputdir}/genotyping")
-        command = f"{config['cellsnplite']} -s {input.bam} " + \
+        command = f"cellsnplite -s {input.bam} " + \
              f"-b {input.barcodefile} " + \
              f"-O {params.outputdir}/genotyping/ " + \
              f"-R {params.region_vcf} " + \
@@ -80,7 +80,6 @@ rule genotype:
 	print(command)
         shell(command)
         
-
 
 rule pre_phasing:
     input:
