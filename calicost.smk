@@ -25,7 +25,7 @@ rule link_or_merge_bam:
     run:
         if "bamlist" in config:
             # merged BAM file
-            shell(f"python merge_bamfile -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
+            shell(f"merge_bamfile -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
             shell(f"samtools sort -m {params.samtools_sorting_mem} -o {output.bam} {params.outputdir}/unsorted_possorted_genome_bam.bam >> {log} 2>&1")
             shell(f"samtools index {output.bam}")
             shell(f"rm -fr {params.outputdir}/unsorted_possorted_genome_bam.bam")
