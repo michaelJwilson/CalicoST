@@ -53,7 +53,7 @@ rule link_or_merge_bam:
 	    # barcodes
             shell(f"gunzip -c {config['spaceranger_dir']}/filtered_feature_bc_matrix/barcodes.tsv.gz > {output.barcodefile}")
 
-
+# TODO container: containers/cellsnp-lite.sif
 rule genotype:
     input:
         barcodefile="{outputdir}/barcodes.txt",
@@ -65,7 +65,6 @@ rule genotype:
         outputdir="{outputdir}",
         region_vcf=config['region_vcf']
     threads: config['nthreads_cellsnplite']
-    container: containers/cellsnp-lite.sif
     log:
         "{outputdir}/logs/genotyping.log"
     run:
