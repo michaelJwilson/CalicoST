@@ -1,3 +1,4 @@
+# NB see http://damianavila.github.io/blog/posts/how-to-pin-conda.html
 numpy==1.24.4
 scipy==1.11.3
 pandas==2.1.1
