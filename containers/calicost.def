@@ -28,7 +28,8 @@ Stage: build
 
     micromamba env create -f mini_calicost.yaml
 
-    eval "$(micromamba shell hook --shell)"
+    # TODO
+    # eval "$(micromamba shell hook --shell bash)"
 
     micromamba activate mini_calicost
 
