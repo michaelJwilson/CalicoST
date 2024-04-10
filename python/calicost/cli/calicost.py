@@ -38,7 +38,9 @@ def main():
         config = read_configuration_file(configuration_file)
     except:
         config = read_joint_configuration_file(configuration_file)
+        
     logger.info("Configurations:")
+    
     for k in sorted(list(config.keys())):
         logger.info(f"\t{k} : {config[k]}")
 
@@ -170,13 +172,16 @@ def main():
             for bafc in range(n_baf_clones):
                 prefix = f"clone{bafc}"
                 idx_spots = np.where(merged_baf_assignment == bafc)[0]
+
                 if np.sum(single_total_bb_RD[:, idx_spots]) < single_X.shape[0] * 20: # put a minimum B allele read count on pseudobulk to split clones
                     continue
+                
                 # initialize clone
                 if config["tumorprop_file"] is None:
                     initial_clone_index = rectangle_initialize_initial_clone(coords[idx_spots], config['n_clones_rdr'], random_state=r_hmrf_initialization)
                 else:
                     initial_clone_index = rectangle_initialize_initial_clone_mix(coords[idx_spots], config['n_clones_rdr'], single_tumor_prop[idx_spots], threshold=config["tumorprop_threshold"], random_state=r_hmrf_initialization)
+
                 if not Path(f"{outdir}/{prefix}_nstates{config['n_states']}_smp.npz").exists():
                     initial_assignment = np.zeros(len(idx_spots), dtype=int)
                     for c,idx in enumerate(initial_clone_index):
@@ -186,6 +191,7 @@ def main():
                 
                 # HMRF + HMM using RDR information
                 copy_slice_sample_ids = copy.copy(sample_ids[idx_spots])
+                
                 if config["tumorprop_file"] is None:
                     hmrf_concatenate_pipeline(outdir, prefix, single_X[:,:,idx_spots], lengths, single_base_nb_mean[:,idx_spots], single_total_bb_RD[:,idx_spots], initial_clone_index, n_states=config["n_states"], \
                         log_sitewise_transmat=log_sitewise_transmat, smooth_mat=smooth_mat[np.ix_(idx_spots,idx_spots)], adjacency_mat=adjacency_mat[np.ix_(idx_spots,idx_spots)], sample_ids=copy_slice_sample_ids, max_iter_outer=10, nodepotential=config["nodepotential"], \
