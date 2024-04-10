@@ -27,7 +27,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - 
 logger = logging.getLogger()
 
 
-@profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--configfile", help="configuration file of CalicoST", required=True, type=str)
