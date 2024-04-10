@@ -10,9 +10,10 @@ filtergenelist_file: "/n/fs/ragr-data/users/congma/references/cellranger_refdata
 filterregion_file: "/n/fs/ragr-data/users/congma/references/cellranger_refdata-gex-GRCh38-2020-A/genes/HLA_regions.bed"
 
 tumorprop_file: "/u/congma/ragr-data/datasets/DingLab/HT112/HT112C1-T1_U1/ht112_u1_rctd_prop.tsv"
-
-geneticmap_file: "/u/congma/ragr-data/datasets/genetic_map/recomb-hg38/genetic_map_GRCh38_merged.tab"
 hgtable_file: "/u/congma/ragr-data/users/congma/Codes/STARCH_crazydev/hgTables_hg38_gencode.txt"
+
+# NB required by eagle.
+geneticmap_file: "/u/congma/ragr-data/datasets/genetic_map/recomb-hg38/genetic_map_GRCh38_merged.tab"
 
 # output allele matrices required by CalicoST and 
 output_snpinfo: "/u/congma/ragr-data/users/congma/Datasets/test_calico/snpinfo"
