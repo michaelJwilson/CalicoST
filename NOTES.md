@@ -13,4 +13,4 @@
 - GRCh38_resources: what are these and were are they found for other references?
 - genetic_map_GRCh38_merged.tab: tabix index?
 - deprecate bin/* bash scripts.  These aren't used.
-- 
+- what resolves outputdir variable?

@@ -1,4 +1,4 @@
-# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity) (--sdm conda)
+# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity) (--sdm conda apptainer)
 # 
 import numpy as np
 import pandas as pd
@@ -66,6 +66,7 @@ rule genotype:
         outputdir="{outputdir}",
         region_vcf=config['region_vcf']
     threads: config['nthreads_cellsnplite']
+    container: containers/cellsnp-lite.sif
     log:
         "{outputdir}/logs/genotyping.log"
     run:
