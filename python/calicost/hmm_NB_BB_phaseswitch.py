@@ -537,8 +537,8 @@ def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total
         if (init_p_binom is None) and ("p" in params):
             init_p_binom = tmp_p_binom
             
-    logger.info(f"init_log_mu = {init_log_mu}")
-    logger.info(f"init_p_binom = {init_p_binom}")
+    logger.info(f"init_log_mu =\n{init_log_mu}")
+    logger.info(f"init_p_binom =\n{init_p_binom}")
     
     # fit HMM-NB-BetaBinom
     # new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat = hmmmodel.run_baum_welch_nb_bb(X, lengths, \
