@@ -3,9 +3,13 @@
 #
 # TODO
 #
+# - cellsnp-lite==1.2.3
+#
 # - networkx==3.2.1
 # - matplotlib==3.7.3
 # - mamba==1.5.3
+#
+#
 #
 # - python-igraph
 # - leidenalg
@@ -38,4 +42,3 @@ dependencies:
   - snakemake==7.32.4
   - samtools==1.18
   - bcftools==1.18
-  - cellsnp-lite==1.2.3
