@@ -341,13 +341,15 @@ class hmm_nophasing_v2(object):
                 new_taus = taus
                 
             # check convergence
+            """
+            # TODO
             logger.info( np.mean(np.abs( np.exp(new_log_startprob) - np.exp(log_startprob) )), \
                 np.mean(np.abs( np.exp(new_log_transmat) - np.exp(log_transmat) )), \
                 np.mean(np.abs(new_log_mu - log_mu)),\
                 np.mean(np.abs(new_p_binom - p_binom)) )
             
             logger.info( np.hstack([new_log_mu, new_p_binom]) )
-            
+            """
             if np.mean(np.abs( np.exp(new_log_transmat) - np.exp(log_transmat) )) < tol and \
                 np.mean(np.abs(new_log_mu - log_mu)) < tol and np.mean(np.abs(new_p_binom - p_binom)) < tol:
                 break
