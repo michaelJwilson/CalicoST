@@ -48,12 +48,19 @@ numba = "0.57.1"
 pysam = "0.22.0"
 snakemake = "7.32.4"
 pulp = "<2.8"
-samtools = "1.18"
-bcftools = "1.18"
 
-# matplotlib = "3.7.3"
-# networkx = "3.2.1"
-
+[tool.poetry.extras]
+matplotlib = "3.7.3"
+networkx = "3.2.1"
+# python-igraph = "*"
+# leidenalg = "*"                                                                                                                                                                                                                                                               
+# ipykernel = "*"                                                                                                                                                                                                                                                             
+# seaborn = "*"                                                                                                                                                                                                                                                                 
+# ca-certificates = "*"                                                                                                                                                                                                                                                        
+# certifi = "*"
+# openssl = "*"                                                                                                                                                                                                                                                                
+# ete3 = "*"
+    
 [tool.poetry.group.test.dependencies]
 pytest = "^6.0.0"
 ruff = "^0.3.3"
