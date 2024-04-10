@@ -9,20 +9,15 @@
 2. Assigns each spot a clone label indicating whether the spot is primarily normal cells or a cancer clone with an aberration copy number profile.
 3. Infers a phylogeny relating the identified cancer clones as well as a phylogeography that combines genetic evolution and spatial dissemination of clones.
 4. Handles normal cell admixture in SRT technologies that are not single-cell resolution (e.g. 10x Genomics Visium) to ensure more accurate allele-specific copy numbers and cancer clones.
-5.  Simultaneously analyzes multiple regions or aligned SRT slices from the same tumor.
+5. Simultaneously analyzes multiple regions or aligned SRT slices from the same tumor.
 
 # System requirements
 The package has been tested on the following Linux operating systems: SpringdaleOpenEnterprise 9.2 (Parma) and CentOS Linux 7 (Core).
-Apple silicon installs can be facilitated with Rosetta emulation of the x86 instruction set, see e.g. [here](https://taylorreiter.github.io/2022-04-05-Managing-multiple-architecture-specific-installations-of-conda-on-apple-M1/) - note, brew install iterm2 as duplication of the terminal app. is no longer supported.  
-
 
 # Installation
 First, setup a conda environment from the `environment.yml` file:
 ```
 cd CalicoST
-
-conda config --add channels conda-forge
-conda config --add channels bioconda
 
 conda env create -f environment.yml --name calicost_env
 
@@ -56,17 +51,18 @@ cmake -DLIBLEMON_ROOT=<lemon path>\
 make
 ```
 Note this will install a copy of cellsnp-lite to the environment directory, which must be updated
-in the config.yaml, i.e. with the output of which cellsnp-lite. 
+in the config.yaml, i.e. with the new path to the installed cellsnp-lite. 
 
 Finally, install CalicoST using pip in the root directory with
 ```
 pip install --no-deps -e .
 ```
 Setting up the conda environments takes around 10 minutes on an HPC head node.  Make sure to use the
-[mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) backend for conda to ensure the fastest builds.
+[mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html) backend to ensure
+fast builds.
 
 # Getting started
-CalicoST requires the coordinate information of genes and SNPs, the information files for GRCh38 genome are available from either of the [example data tarball](https://github.com/raphael-group/CalicoST/tree/main/examples). Specify the information file paths, your input SRT data paths, and running configurations in `config.yaml`, and then you can run CalicoST by
+CalicoST requires annotations for genes and SNPs - these are available for the GRCh38 reference are available in the [example tarballs](https://github.com/raphael-group/CalicoST/tree/main/examples). Specify the information file paths, your input SRT data paths, and running configurations in `config.yaml`, and then you can run CalicoST by
 ```
 snakemake --cores <number cores> --configfile config.yaml --snakefile calicost.smk all (--use-singularity) (--use-conda)
 ```
@@ -84,35 +80,30 @@ Other SNP panels are available at [cellsnp-lite webpage](https://cellsnp-lite.re
 
 ### Run CalicoST
 Gunzip the downloaded example data and replace the following paths in the provide `example_config.yaml` with those on your machine,
-* calicost_dir: the path to the cloned CalicoST repository.
-* eagledir: the path to the downloaded Eagle2 directory
-* region_vcf: the path to the downloaded SNP panel.
-* phasing_panel: the path to the downloaded and unzipped phasing panel.
-* spaceranger_dir: ** TODO **
+* region_vcf: the path to the downloaded SNP panel vcf.
+* phasing_panel: the path to the downloaded and unzipped phasing panel directory.
+* spaceranger_dir: the path to Visium Space Ranger output directory.
 
-To avoid falling into local maxima in CalicoST's optimization objective, we recommend running CalicoST with multiple random initializations that are specified by the `random_state` variable in `example_config.yaml`. The provided one uses five random initializations, but may be lessened for a test of the installation.
+To avoid falling into local maxima in CalicoST's optimization objective, we recommend running CalicoST with multiple random initializations that are specified by the `random_state` variable in each config. Those provided use five random initializations, but this may be made smaller in testing.
 
 Finally, run CalicoST with
 ```
-cd <directory of downloaded example data>
-
-snakemake --cores 5 --configfile example_config.yaml --snakefile <calicost_dir>/calicost.smk all
+snakemake --cores <number cores> --configfile example_config.yaml --snakefile <calicost_dir>/calicost.smk all
 ```
-
-CalicoST takes just ove an hour to complete this example when 5 cores are available.
+CalicoST takes just ove an hour to complete this example with 5 cores.
 
 ### Understanding the results
 The above snakemake run will create a folder `calicost` in the directory of downloaded example data. Within this folder, each random initialization of CalicoST generates a subdirectory of `calicost/clone*`. 
 
-CalicoST generates the following key files of each random initialization:
+CalicoST generates the following key files for each random initialization:
 * clone_labels.tsv: The inferred clone labels for each spot.
 * cnv_seglevel.tsv: Allele-specific copy numbers for each clone for each genome segment.
 * cnv_genelevel.tsv: The projected allele-specific copy numbers from genome segments to the covered genes.
-* cnv_*_seglevel.tsv and cnv_*_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment or each gene.
+* cnv_*_seglevel.tsv and cnv_*_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment & each gene.
 
-See the following examples of the key files.
+See the following examples of these key files.
 ```
-head -10 calicost/clone3_rectangle0_w1.0/clone_labels.tsv
+head -n 10 calicost/clone3_rectangle0_w1.0/clone_labels.tsv
 BARCODES        clone_label
 spot_0  2
 spot_1  2
@@ -126,7 +117,7 @@ spot_8  0
 ```
 
 ```
-head -10 calicost/clone3_rectangle0_w1.0/cnv_seglevel.tsv
+head -n 10 calicost/clone3_rectangle0_w1.0/cnv_seglevel.tsv
 CHR     START   END     clone0 A        clone0 B        clone1 A        clone1 B        clone2 A        clone2 B
 1       1001138 1616548 1       1       1       1       1       1
 1       1635227 2384877 1       1       1       1       1       1
@@ -140,7 +131,7 @@ CHR     START   END     clone0 A        clone0 B        clone1 A        clone1 B
 ```
 
 ```
-head -10 calicost/clone3_rectangle0_w1.0/cnv_genelevel.tsv
+head -n 10 calicost/clone3_rectangle0_w1.0/cnv_genelevel.tsv
 gene    clone0 A        clone0 B        clone1 A        clone1 B        clone2 A        clone2 B
 A1BG    1       1       1       1       1       1
 A1CF    1       1       1       1       1       1
@@ -153,9 +144,9 @@ AAK1    1       1       1       1       1       1
 AAMP    1       1       1       1       1       1
 ```
 
-CalicoST graphs the following plots to visualize the spatial distribution of the inferred cancer clones and allele-specific copy number profiles for each random initialization.
-* ```plots/clone_spatial.pdf```: The spatial distribution of inferred cancer clones and normal regions (grey color, clone 0 by default)
-* ```plots/rdr_baf_defaultcolor.pdf```: The Read Depth Ratio (RDR) and B-Allele Frequency (BAF) along the genome for each clone.  Higher RDR indicates higher total copy numbers and BAF deviations from 0.5 indicates allele imbalance due to allele-specific CNAs.
+CalicoST creates the following plots to visualize the spatial distribution of the inferred cancer clones and allele-specific copy number profiles for each realization.
+* ```plots/clone_spatial.pdf```: The spatial distribution of inferred cancer clones and normal regions - grey color, clone 0 by default.
+* ```plots/rdr_baf_defaultcolor.pdf```: The Read Depth Ratio (RDR) and B-Allele Frequency (BAF) along the genome for each clone.  Higher RDR indicates higher total copy numbers and BAF deviations from 0.5 indicates allelic imbalance due to CNAs.
 * ```plots/acn_genome.pdf```: The default allele-specific copy numbers along the genome.
 * ```plots/acn_genome_*.pdf```: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid}.
 
@@ -164,38 +155,5 @@ The allele-specific copy number plots have the following color legend.
 <img src="https://github.com/raphael-group/CalicoST/blob/main/docs/_static/img/acn_color_palette.png?raw=true" width="20%" height="auto"/>
 </p>
 
-
 # Software dependencies
-CalicoST uses the following command-line packages and python for extracting the BAF information
-* samtools
-* cellsnp-lite
-* Eagle2
-* pysam
-* snakemake
-
-As indicated by the provided environment.yaml and setup.py, CalicoST uses the following packages for the remaining steps to infer allele-specific copy numbers and cancer clones:
-<table>
-  <tr>
-    <td> <!-- Column 1 -->
-      <ul>
-        <li>snakemake</li>
-        <li>numpy</li>
-        <li>scipy</li>
-        <li>pandas</li>
-	<li>numba</li>
-	<li>tqdm</li>
-	<li>seaborn</li>
-      </ul>
-    </td>
-    <td> <!-- Column 2 -->
-      <ul>
-        <li>scikit-learn</li>
-        <li>scanpy</li>
-        <li>anndata</li>
-	<li>statsmodels</li>
-	<li>networkx</li>
-	<li>matplotlib</li>
-      </ul>
-    </td>
-  </tr>
-</table>
+TODO
