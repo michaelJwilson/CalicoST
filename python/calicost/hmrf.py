@@ -410,7 +410,7 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
             log_persample_weights[:, sidx] = np.where(this_persample_weight > 0, np.log(this_persample_weight), -50)
             log_persample_weights[:, sidx] = log_persample_weights[:, sidx] - scipy.special.logsumexp(log_persample_weights[:, sidx])
 
-
+@profile
 def hmrf_concatenate_pipeline(outdir, prefix, single_X, lengths, single_base_nb_mean, single_total_bb_RD, initial_clone_index, n_states, \
     log_sitewise_transmat, coords=None, smooth_mat=None, adjacency_mat=None, sample_ids=None, max_iter_outer=5, nodepotential="max", hmmclass=hmm_sitewise, \
     params="stmp", t=1-1e-6, random_state=0, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
