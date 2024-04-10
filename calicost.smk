@@ -1,5 +1,4 @@
 # NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity) (--sdm conda apptainer)
-# 
 import numpy as np
 import pandas as pd
 import scipy
@@ -92,10 +91,11 @@ rule pre_phasing:
     threads: 1
     run:
         shell(f"mkdir -p {params.outputdir}/phasing")
-	
-        print(f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
-	
-        shell(f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
+
+	command = f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing"
+
+        print(command)
+	shell(command)
 	
         for chrname in config["chromosomes"]:
             shell(f"bgzip -f {params.outputdir}/phasing/chr{chrname}.vcf")
