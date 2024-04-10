@@ -1,0 +1,35 @@
+# NB (rm ./eagle.sif); apptainer build ./eagle.sif ./eagle.def;
+#    images are cached to $HOME/.apptainer/cache
+# 
+Bootstrap: docker
+
+# NB https://hub.docker.com/r/continuumio/miniconda3
+From: mambaorg/micromamba
+Stage: build
+
+%environment
+    export PATH=/home/usr/bin/:$PATH
+
+%files
+    ../README.md /home/usr/README.md
+
+%post
+    apt-get update && apt-get install -y emacs wget
+
+    # NB create early to benefit from layer caching.
+    wget -O /home/usr/Eagle_v2.4.1.tar.gz https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/Eagle_v2.4.1.tar.gz
+    tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
+    mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
+
+%runscript
+    /bin/bash
+    
+%test
+    echo "NO AVAILABLE TESTS FOR EAGLE CONTAINER"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container for phasing with Eagle.

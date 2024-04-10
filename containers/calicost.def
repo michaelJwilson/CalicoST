@@ -4,14 +4,16 @@
 Bootstrap: docker
 
 # NB https://hub.docker.com/r/continuumio/miniconda3
-From: continuumio/miniconda3
+From: mambaorg/micromamba
 Stage: build
 
 %files
     ../mini_calicost.yaml /home/usr/mini_calicost.yaml
+    ../pyproject.toml /home/usr/pyproject.toml
+    ../poetry.lock /home/usr/poetry.lock
 
     # TODO HACK replace with git clone on PR from branch
-    /Genomics/argo/users/mw9568/repos/CalicoST /home/usr/CalicoST
+    /Genomics/argo/users/mw9568/repos/CalicoST/python/calicost /home/usr/calicost
 
 %environment
     export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH

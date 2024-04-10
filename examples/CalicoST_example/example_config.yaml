@@ -4,7 +4,7 @@
 # eagledir: "/Genomics/argo/users/mw9568/Eagle_v2.4.1/"
 
 # path to data resources
-region_vcf: "/scratch/tmp/mw9568/calico/CalicoST_example/snp_panel/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
+region_vcf: "/scratch/tmp/mw9568/calico/CalicoST_example/snps/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz"
 phasing_panel: "/scratch/tmp/mw9568/calico/CalicoST_example/phasing/1000G_hg38"
 
 # NB path to Visium 10x read-depth-ratio output
