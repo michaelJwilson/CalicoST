@@ -16,6 +16,7 @@ from calicost.hmm_NB_BB_nophasing import *
 from calicost.hmm_NB_BB_nophasing_v2 import *
 import networkx as nx
 
+logger = logging.getLogger(__name__)
 
 ############################################################
 # whole inference
@@ -34,7 +35,7 @@ class hmm_sitewise(object):
         """
         self.params = params
         self.t = t
-    #
+    
     @staticmethod
     def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
         """
@@ -89,7 +90,7 @@ class hmm_sitewise(object):
                     log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
                     log_emission_baf[i + n_states, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], (1-p_binom[i, s]) * taus[i, s], p_binom[i, s] * taus[i, s])
         return log_emission_rdr, log_emission_baf
-    #
+    
     @staticmethod
     def compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
         """
@@ -146,7 +147,7 @@ class hmm_sitewise(object):
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
                     log_emission_baf[i + n_states, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_B * taus[i, s], mix_p_A * taus[i, s])
         return log_emission_rdr, log_emission_baf
-    #
+    
     @staticmethod
     @njit 
     def forward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
@@ -186,7 +187,7 @@ class hmm_sitewise(object):
                     log_alpha[j, (cumlen + t)] = mylogsumexp(buf) + np.sum(log_emission[j, (cumlen + t), :])
             cumlen += le
         return log_alpha
-    #
+    
     @staticmethod
     @njit
     def backward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
@@ -226,7 +227,7 @@ class hmm_sitewise(object):
                     log_beta[i, (cumlen + t)] = mylogsumexp(buf)
             cumlen += le
         return log_beta
-    #
+    
     def run_baum_welch_nb_bb(self, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop=None, \
         fix_NB_dispersion=False, shared_NB_dispersion=False, fix_BB_dispersion=False, shared_BB_dispersion=False, \
         is_diag=False, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None, max_iter=100, tol=1e-4):
@@ -240,13 +241,14 @@ class hmm_sitewise(object):
             log_mu: size of n_states. Log of mean/exposure/base_prob of each HMM state.
             alpha: size of n_states. Dispersioon parameter of each HMM state.
         '''
-        n_obs = X.shape[0]
-        n_comp = X.shape[1]
-        n_spots = X.shape[2]
+        (n_obs, n_comp, n_spots) = X.shape
+        
         assert n_comp == 2
+        
         # initialize NB logmean shift and BetaBinom prob
         log_mu = np.vstack([np.linspace(-0.1, 0.1, n_states) for r in range(n_spots)]).T if init_log_mu is None else init_log_mu
         p_binom = np.vstack([np.linspace(0.05, 0.45, n_states) for r in range(n_spots)]).T if init_p_binom is None else init_p_binom
+        
         # initialize (inverse of) dispersion param in NB and BetaBinom
         alphas = 0.1 * np.ones((n_states, n_spots)) if init_alphas is None else init_alphas
         taus = 30 * np.ones((n_states, n_spots)) if init_taus is None else init_taus
@@ -498,8 +500,9 @@ def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total
             init_log_mu = tmp_log_mu
         if (init_p_binom is None) and ("p" in params):
             init_p_binom = tmp_p_binom
-    print(f"init_log_mu = {init_log_mu}")
-    print(f"init_p_binom = {init_p_binom}")
+            
+    logger.info(f"init_log_mu = {init_log_mu}")
+    logger.info(f"init_p_binom = {init_p_binom}")
     
     # fit HMM-NB-BetaBinom
     # new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat = hmmmodel.run_baum_welch_nb_bb(X, lengths, \
