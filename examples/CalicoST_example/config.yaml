@@ -35,7 +35,7 @@ random_state: [0]
 
 # HMRF configurations
 # TODO HACK n_clones: 3
-n_clones : 1 
+n_clones : 2
 n_clones_rdr : 2
 min_spots_per_clone : 100
 min_avgumi_per_clone : 10

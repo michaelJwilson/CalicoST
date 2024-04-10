@@ -61,8 +61,8 @@ def main():
             initial_clone_index = rectangle_initialize_initial_clone_mix(coords, config["n_clones"], single_tumor_prop, threshold=config["tumorprop_threshold"], random_state=r_hmrf_initialization)
 
         # create directory
-        p = subprocess.Popen(f"mkdir -p {outdir}", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out,err = p.communicate()
+        Path(f"{outdir}").mkdir(parents=True, exist_ok=True) 
+        
         # save clone initialization into npz file
         prefix = "allspots"
         if not Path(f"{outdir}/{prefix}_nstates{config['n_states']}_sp.npz").exists():
