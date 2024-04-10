@@ -17,7 +17,7 @@ from calicost.arg_parse import *
 from calicost.phasing import *
 from calicost.utils_IO import *
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger()
 
 def genesnp_to_bininfo(df_gene_snp):

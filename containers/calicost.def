@@ -13,46 +13,34 @@ Stage: build
     ../poetry.lock /home/usr/poetry.lock
 
     # TODO HACK replace with git clone on PR from branch
-    /Genomics/argo/users/mw9568/repos/CalicoST/python/calicost /home/usr/calicost
+    /Genomics/argo/users/mw9568/repos/CalicoST/python /home/usr/python
 
 %environment
-    export PATH=/home/usr/bin/:/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
-
-    # NB pip install from source
-    export PYTHONPATH=/home/usr/CalicoST/python/:$PYTHONPATH
+    # TODO /Genomics/argo/users/mw9568/micromamba/envs/mini_calicost/lib/python3.10/site-packages/numpy/__init__.py
+    export PATH=/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
 
 %post
-    apt-get update && apt-get install -y emacs
+    apt-get update && apt-get install -y emacs pipx
 
-    # NB create early to benefit from layer caching.
-    wget -O /home/usr/Eagle_v2.4.1.tar.gz https://storage.googleapis.com/broad-alkesgroup-public/Eagle/downloads/Eagle_v2.4.1.tar.gz
-    tar -xzf /home/usr/Eagle_v2.4.1.tar.gz -C /home/usr/
-    mkdir -p /home/usr/bin; cp /home/usr/Eagle_v2.4.1/eagle /home/usr/bin/
+    pipx install poetry==1.8.2
 
-    # NB see https://www.anaconda.com/blog/a-faster-conda-for-a-growing-community
-    conda config --set solver libmamba
+    cd /home/usr/
 
-    conda env create -f /home/usr/mini_calicost.yaml --name {{ ENV_NAME }}
+    micromamba env create -f mini_calicost.yaml
+
+    micromamba activate mini_calicost
 
     # TODO HACK see equivalent cp above.
     # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
 
-    # TODO HACK shouldn't be necessary
-    rm -rf /home/usr/CalicoST/python/calicost.egg-info
-
     # NB add -e for editable source
-    cd /home/usr/CalicoST; /opt/conda/envs/calicost/bin/pip install --no-deps -e .
+    # cd /home/usr/CalicoST; /opt/conda/envs/calicost/bin/pip install --no-deps -e .
+
+    # poetry install
 
 
 %runscript
     /bin/bash
-
-    # NB when the container is invoked, arguments following the container name are passed to the runscript.
-    echo "Arguments received: $*"
-    exec echo "$@"
-   
-    # conda activate {{ ENV_NAME }}
-    # cd /home/usr
 
 %test
     echo "NO AVAILABLE TESTS FOR {{ ENV_NAME }}"
