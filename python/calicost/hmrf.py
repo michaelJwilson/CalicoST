@@ -302,10 +302,14 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
     hmmclass=hmm_sitewise, params="stmp", t=1-1e-6, random_state=0, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
     fix_NB_dispersion=False, shared_NB_dispersion=True, fix_BB_dispersion=False, shared_BB_dispersion=True, \
     is_diag=True, max_iter=100, tol=1e-4, unit_xsquared=9, unit_ysquared=3, spatial_weight=1.0):
+    """
+    """
     n_obs, _, n_spots = single_X.shape
     n_clones = len(initial_clone_index)
+    
     # spot adjacency matric
     assert not (coords is None and adjacency_mat is None)
+    
     if adjacency_mat is None:
         adjacency_mat = compute_adjacency_mat(coords, unit_xsquared, unit_ysquared)
     if sample_ids is None:
@@ -317,11 +321,14 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
         tmp_map_index = {unique_sample_ids[i]:i for i in range(len(unique_sample_ids))}
         sample_ids = np.array([ tmp_map_index[x] for x in sample_ids])
     log_persample_weights = np.ones((n_clones, n_samples)) * np.log(n_clones)
+    
     # pseudobulk
     X, base_nb_mean, total_bb_RD = merge_pseudobulk_by_index(single_X, single_base_nb_mean, single_total_bb_RD, initial_clone_index)
+    
     # initialize HMM parameters by GMM
     if (init_log_mu is None) or (init_p_binom is None):
         init_log_mu, init_p_binom = initialization_by_gmm(n_states, X, base_nb_mean, total_bb_RD, params, random_state=random_state, in_log_space=False, only_minor=False)
+        
     # initialization parameters for HMM
     if ("m" in params) and ("p" in params):
         last_log_mu = init_log_mu
@@ -337,6 +344,7 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
     last_assignment = np.zeros(single_X.shape[2], dtype=int)
     for c,idx in enumerate(initial_clone_index):
         last_assignment[idx] = c
+        
     # HMM
     for r in range(max_iter_outer):
         if not Path(f"{outdir}/round{r}_nstates{n_states}_{params}.npz").exists():
@@ -408,6 +416,8 @@ def hmrf_concatenate_pipeline(outdir, prefix, single_X, lengths, single_base_nb_
     params="stmp", t=1-1e-6, random_state=0, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
     fix_NB_dispersion=False, shared_NB_dispersion=True, fix_BB_dispersion=False, shared_BB_dispersion=True, \
     is_diag=True, max_iter=100, tol=1e-4, unit_xsquared=9, unit_ysquared=3, spatial_weight=1.0):
+    """
+    """
     n_obs, _, n_spots = single_X.shape
     n_clones = len(initial_clone_index)
     # checking input

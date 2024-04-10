@@ -43,7 +43,7 @@ maxspots_pooling : 7
 tumorprop_threshold : 0.5
 
 # TODO HACK max_iter_outer : 20
-max_iter_outer : 10
+max_iter_outer : 20
 nodepotential : weighted_sum
 initialization_method : rectangle
 spatial_weight : 1.0

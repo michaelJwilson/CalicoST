@@ -26,7 +26,7 @@ from calicost.cli.parse_input import run_parse_n_load, genesnp_to_bininfo
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger()
 
-
+@profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--configfile", help="configuration file of CalicoST", required=True, type=str)
