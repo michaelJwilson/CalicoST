@@ -23,7 +23,7 @@ from calicost.utils_IO import *
 from calicost.utils_plotting import *
 from calicost.cli.parse_input import run_parse_n_load, genesnp_to_bininfo
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger()
 
 
