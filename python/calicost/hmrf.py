@@ -21,6 +21,7 @@ from calicost.utils_hmrf import *
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning
 
+logger = logging.getLogger(__name__)
 
 ############################################################
 # Pure clone
@@ -378,12 +379,14 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
 
         # update last parameter
         if "mp" in params:
-            print("outer iteration {}: total_llf = {}, difference between parameters = {}, {}".format( r, res["total_llf"], np.mean(np.abs(last_log_mu-res["new_log_mu"])), np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
+            logger.info("outer iteration {}: total_llf = {}, difference between parameters = {}, {}".format( r, res["total_llf"], np.mean(np.abs(last_log_mu-res["new_log_mu"])), np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
         elif "m" in params:
-            print("outer iteration {}: total_llf = {}, difference between NB parameters = {}".format( r, res["total_llf"], np.mean(np.abs(last_log_mu-res["new_log_mu"])) ))
+            logger.info("outer iteration {}: total_llf = {}, difference between NB parameters = {}".format( r, res["total_llf"], np.mean(np.abs(last_log_mu-res["new_log_mu"])) ))
         elif "p" in params:
-            print("outer iteration {}: total_llf = {}, difference between BetaBinom parameters = {}".format( r, res["total_llf"], np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
-        print("outer iteration {}: ARI between assignment = {}".format( r, adjusted_rand_score(last_assignment, res["new_assignment"]) ))
+            logger.info("outer iteration {}: total_llf = {}, difference between BetaBinom parameters = {}".format( r, res["total_llf"], np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
+
+        logger.info("outer iteration {}: ARI between assignment = {}".format( r, adjusted_rand_score(last_assignment, res["new_assignment"]) ))
+
         if adjusted_rand_score(last_assignment, res["new_assignment"]) > 0.99 or len(np.unique(res["new_assignment"])) == 1:
             break
         last_log_mu = res["new_log_mu"]
@@ -392,6 +395,7 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
         last_taus = res["new_taus"]
         last_assignment = res["new_assignment"]
         log_persample_weights = np.ones((X.shape[2], n_samples)) * (-np.log(X.shape[2]))
+        
         for sidx in range(n_samples):
             index = np.where(sample_ids == sidx)[0]
             this_persample_weight = np.bincount(res["new_assignment"][index], minlength=X.shape[2]) / len(index)
@@ -497,12 +501,14 @@ def hmrf_concatenate_pipeline(outdir, prefix, single_X, lengths, single_base_nb_
         X, base_nb_mean, total_bb_RD = merge_pseudobulk_by_index(single_X, single_base_nb_mean, single_total_bb_RD, clone_index)
         #
         if "mp" in params:
-            print("outer iteration {}: difference between parameters = {}, {}".format( r, np.mean(np.abs(last_log_mu-res["new_log_mu"])), np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
+            logger.info("outer iteration {}: difference between parameters = {}, {}".format( r, np.mean(np.abs(last_log_mu-res["new_log_mu"])), np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
         elif "m" in params:
-            print("outer iteration {}: difference between NB parameters = {}".format( r, np.mean(np.abs(last_log_mu-res["new_log_mu"])) ))
+            logger.info("outer iteration {}: difference between NB parameters = {}".format( r, np.mean(np.abs(last_log_mu-res["new_log_mu"])) ))
         elif "p" in params:
-            print("outer iteration {}: difference between BetaBinom parameters = {}".format( r, np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
-        print("outer iteration {}: ARI between assignment = {}".format( r, adjusted_rand_score(last_assignment, res["new_assignment"]) ))
+            logger.info("outer iteration {}: difference between BetaBinom parameters = {}".format( r, np.mean(np.abs(last_p_binom-res["new_p_binom"])) ))
+
+        logger.info("outer iteration {}: ARI between assignment = {}".format( r, adjusted_rand_score(last_assignment, res["new_assignment"]) ))
+        
         # if np.all( last_assignment == res["new_assignment"] ):
         if adjusted_rand_score(last_assignment, res["new_assignment"]) > 0.99 or len(np.unique(res["new_assignment"])) == 1:
             break
