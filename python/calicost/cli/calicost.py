@@ -27,6 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(process)d - %(le
 logger = logging.getLogger()
 
 
+@profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--configfile", help="configuration file of CalicoST", required=True, type=str)
@@ -447,7 +448,9 @@ def main():
                 assignment = pd.Series([f"clone {x}" for x in res_combine["new_assignment"]])
                 fig = plot_individual_spots_in_space(coords, assignment, single_tumor_prop, sample_list=sample_list, sample_ids=sample_ids)
                 fig.savefig(f"{outdir}/plots/clone_spatial.pdf", transparent=True, bbox_inches="tight")
-                
+
+    logger.info("CalicoST complete.")
 
 if __name__ == "__main__":
+    # kernprof -l -v calicost -c config.yaml
     main()
