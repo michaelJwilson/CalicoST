@@ -35,3 +35,6 @@ random_state: [0, 1, 2, 3, 4]
 np_threshold: 1.0
 n_clones: 1
 n_clones_rdr: 1
+
+# Containers
+calicost_container = "/Genomics/argo/users/mw9568/repos/CalicoST/containers/calicost.sif"

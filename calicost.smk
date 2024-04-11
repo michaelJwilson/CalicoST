@@ -53,7 +53,7 @@ rule link_or_merge_bam:
 	    # barcodes
             shell(f"gunzip -c {config['spaceranger_dir']}/filtered_feature_bc_matrix/barcodes.tsv.gz > {output.barcodefile}")
 
-# TODO container: containers/cellsnp-lite.sif
+
 rule genotype:
     input:
         barcodefile="{outputdir}/barcodes.txt",
@@ -191,6 +191,7 @@ rule prepare_calicost_data:
     params:
         outputdir="{outputdir}",
     threads: 16
+    container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/prepare_calicost_data.log"
     shell:
@@ -212,10 +213,9 @@ rule run_calicost:
         outputdir="{outputdir}",
         r="{r}"
     threads: 32
+    container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
-    run:
-        command = f"calicost -c {input[0]} >> {log} 2>&1"
-
-	shell(command)
-        shell(f"echo {command} > {output}")
+    shell:
+        "calicost -c {input[0]} >> {log} 2>&1"
+	
