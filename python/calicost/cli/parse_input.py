@@ -13,9 +13,15 @@ import scanpy as sc
 import scipy
 from sklearn.metrics import adjusted_rand_score
 
-from calicost.arg_parse import *
-from calicost.phasing import *
-from calicost.utils_IO import *
+# from calicost.arg_parse import *
+# from calicost.phasing import *
+# from calicost.utils_IO import *
+
+from calicost.arg_parse import read_configuration_file, read_joint_configuration_file
+from calicost.phasing import initial_phase_given_partition, multislice_adjacency, perform_partition
+from calicost.utils_IO import (combine_gene_snps, create_bin_ranges, create_haplotype_block_ranges,
+                               load_data, load_joint_data, summarize_counts_for_bins,
+                               summarize_counts_for_blocks)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger()

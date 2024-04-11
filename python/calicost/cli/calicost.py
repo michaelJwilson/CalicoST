@@ -13,15 +13,34 @@ import scipy
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 
-from calicost.arg_parse import *
-from calicost.find_integer_copynumber import *
-from calicost.hmm_NB_BB_phaseswitch import *
-from calicost.hmrf import *
-from calicost.phasing import *
-from calicost.utils_distribution_fitting import *
-from calicost.utils_hmrf import *
-from calicost.utils_IO import *
-from calicost.utils_plotting import *
+# from calicost.arg_parse import *
+# from calicost.find_integer_copynumber import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.hmrf import *
+# from calicost.phasing import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.utils_hmrf import *
+# from calicost.utils_IO import *
+# from calicost.utils_plotting import *
+# from calicost.cli.parse_input import run_parse_n_load, genesnp_to_bininfo
+
+from calicost.find_integer_copynumber import (hill_climbing_integer_copynumber_fixdiploid,
+                                              hill_climbing_integer_copynumber_oneclone)
+from calicost.utils_plotting import (aggr_hmrf_reassignment, aggr_hmrfmix_reassignment, argparse,
+                                     bin_selection_basedon_normal,
+                                     combine_similar_states_across_clones, expand_df_cnv,
+                                     filter_de_genes_tri, hmm_nophasing_v2,
+                                     hmrf_concatenate_pipeline, hmrf_reassignment_posterior,
+                                     hmrfmix_concatenate_pipeline, hmrfmix_reassignment_posterior,
+                                     load_hmrf_last_iteration, merge_by_minspots,
+                                     merge_pseudobulk_by_index, merge_pseudobulk_by_index_mix,
+                                     pipeline_baum_welch, plot_acn_from_df,
+                                     plot_acn_from_df_anotherscheme, plot_clones_in_space,
+                                     plot_individual_spots_in_space, plot_rdr_baf, plt,
+                                     read_configuration_file, read_joint_configuration_file,
+                                     rectangle_initialize_initial_clone,
+                                     rectangle_initialize_initial_clone_mix, reorder_results,
+                                     similarity_components_rdrbaf_neymanpearson)
 from calicost.cli.parse_input import run_parse_n_load, genesnp_to_bininfo
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - PID=%(process)d - %(levelname)s - %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

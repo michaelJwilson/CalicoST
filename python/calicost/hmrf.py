@@ -13,10 +13,14 @@ import networkx as nx
 from tqdm import trange
 import copy
 from pathlib import Path
-from calicost.hmm_NB_BB_phaseswitch import *
-from calicost.utils_distribution_fitting import *
-from calicost.utils_IO import *
-from calicost.utils_hmrf import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.utils_IO import *
+# from calicost.utils_hmrf import *
+
+from calicost.hmm_NB_BB_phaseswitch import hmm_sitewise, initialization_by_gmm, pipeline_baum_welch
+from calicost.utils_hmrf import (compute_adjacency_mat, merge_pseudobulk_by_index,
+                                 merge_pseudobulk_by_index_mix)
 
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning

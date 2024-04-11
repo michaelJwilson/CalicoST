@@ -10,14 +10,17 @@ from sklearn.kernel_ridge import KernelRidge
 from sklearn.cluster import KMeans
 import scanpy as sc
 import anndata
-import logging
-# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-logger = logging.getLogger(__name__)
-
-from calicost.utils_phase_switch import *
-from calicost.utils_distribution_fitting import *
 import subprocess
+import logging
 
+# from calicost.utils_phase_switch import *
+# from calicost.utils_distribution_fitting import *
+from calicost.utils_phase_switch import (compute_phase_switch_probability_position,
+                                         get_intervals_nd, get_position_cM_table)
+from calicost.utils_distribution_fitting import Weighted_BetaBinom
+
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")                                                                                  
+logger = logging.getLogger(__name__)
 
 def load_data(spaceranger_dir, snp_dir, filtergenelist_file, filterregion_file, normalidx_file, min_snpumis=50, min_percent_expressed_spots=0.005):
     ##### read raw UMI count matrix #####

@@ -10,9 +10,17 @@ from tqdm import trange
 import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
 import copy
-from calicost.utils_distribution_fitting import *
-from calicost.utils_hmm import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.utils_hmm import *
 import networkx as nx
+
+from calicost.utils_hmm import (compute_posterior_obs, compute_posterior_transition_nophasing,
+                                construct_unique_matrix, convert_params, mylogsumexp,
+                                np_sum_ax_squeeze, update_emission_params_bb_nophasing_uniqvalues,
+                                update_emission_params_bb_nophasing_uniqvalues_mix,
+                                update_emission_params_nb_nophasing_uniqvalues,
+                                update_emission_params_nb_nophasing_uniqvalues_mix,
+                                update_startprob_nophasing, update_transition_nophasing)
 
 logger = logging.getLogger(__name__)
 
