@@ -11,6 +11,9 @@
 - sandbox deprecation
 
 ### Warnings
+- convert_params defined multiple times
+- compute_posterior_transition_sitewise defined multiple times
+
 Warning: hmm_NB_BB_phaseswitch.py: 'compute_posterior_obs' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
 Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_bb_sitewise_uniqvalues' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
 Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_bb_sitewise_uniqvalues_mix' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.

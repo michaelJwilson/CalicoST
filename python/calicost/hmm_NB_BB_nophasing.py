@@ -14,8 +14,9 @@ import copy
 # from calicost.utils_hmm import *
 import networkx as nx
 
+from calicost.utils_distribution_fitting import convert_params
 from calicost.utils_hmm import (compute_posterior_obs, compute_posterior_transition_nophasing,
-                                construct_unique_matrix, convert_params, mylogsumexp,
+                                construct_unique_matrix, mylogsumexp,
                                 np_sum_ax_squeeze, update_emission_params_bb_nophasing_uniqvalues,
                                 update_emission_params_nb_nophasing_uniqvalues,
                                 update_emission_params_nb_nophasing_uniqvalues_mix,
