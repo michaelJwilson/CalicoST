@@ -1,4 +1,4 @@
-# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity) (--sdm conda apptainer)
+# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity)
 import numpy as np
 import pandas as pd
 import scipy
