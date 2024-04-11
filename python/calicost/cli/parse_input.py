@@ -247,7 +247,7 @@ def run_parse_n_load(config):
         scipy.sparse.save_npz( f"{config['output_dir']}/parsed_inputs/smooth_mat.npz", smooth_mat )
         
         df_gene_snp.to_csv( f"{config['output_dir']}/parsed_inputs/gene_snp_info.csv.gz", header=True, index=False, sep="\t" )
-
+    
     return load_tables_to_matrices(config["output_dir"])
 
 
