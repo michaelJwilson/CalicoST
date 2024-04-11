@@ -7,8 +7,11 @@
 - genetic_map_GRCh38_merged.tab: tabix index?
 - deprecate bin/* bash scripts.  These aren't used.
 - what resolves outputdir variable?
+- startle snakemake rule?
+- sandbox deprecation
 
 
 ### NOTES
 - How to pin conda: http://damianavila.github.io/blog/posts/how-to-pin-conda.html
 - Apple silicon installs can be facilitated with Rosetta emulation of the x86 instruction set, see e.g. [here](https://taylorreiter.github.io/2022-04-05-Managing-multiple-architecture-specific-installations-of-conda-on-apple-M1/) - note, brew install iterm2 as duplication of the terminal app. is no longer supported.
+-  poetry config virtualenvs.prefer-active-python false
