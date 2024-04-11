@@ -114,7 +114,7 @@ def load_data(spaceranger_dir, snp_dir, filtergenelist_file, filterregion_file, 
     clf = LocalOutlierFactor(n_neighbors=200)
     label = clf.fit_predict( np.sum(adata.layers["count"], axis=0).reshape(-1,1) )
     adata.layers["count"][:, np.where(label==-1)[0]] = 0
-    print("filter out {} outlier genes.".format( np.sum(label==-1) ))
+    logger.info("filter out {} outlier genes.".format( np.sum(label==-1) ))
 
     if not normalidx_file is None:
         normal_barcodes = pd.read_csv(normalidx_file, header=None).iloc[:,0].values
@@ -281,7 +281,7 @@ def load_joint_data(input_filelist, snp_dir, alignment_files, filtergenelist_fil
     clf = LocalOutlierFactor(n_neighbors=200)
     label = clf.fit_predict( np.sum(adata.layers["count"], axis=0).reshape(-1,1) )
     adata.layers["count"][:, np.where(label==-1)[0]] = 0
-    print("filter out {} outlier genes.".format( np.sum(label==-1) ))
+    logger.info("filtered out {} outlier genes.".format( np.sum(label==-1) ))
 
     if not normalidx_file is None:
         normal_barcodes = pd.read_csv(normalidx_file, header=None).iloc[:,0].values

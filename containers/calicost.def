@@ -3,44 +3,16 @@
 # 
 Bootstrap: docker
 
-# NB https://hub.docker.com/r/continuumio/miniconda3
-From: mambaorg/micromamba
+From: python:3.10.14
 Stage: build
 
 %files
-    ../mini_calicost.yaml /home/usr/mini_calicost.yaml
-    ../pyproject.toml /home/usr/pyproject.toml
-    ../poetry.lock /home/usr/poetry.lock
-
-    # TODO HACK replace with git clone on PR from branch
-    /Genomics/argo/users/mw9568/repos/CalicoST/python /home/usr/python
-
-%environment
-    # TODO /Genomics/argo/users/mw9568/micromamba/envs/mini_calicost/lib/python3.10/site-packages/numpy/__init__.py
-    export PATH=/opt/conda/envs/{{ ENV_NAME }}/bin/:$PATH
+    ../dist/calicost-1.0.0-py3-none-any.whl /home/usr/calicost/dist/calicost-1.0.0-py3-none-any.whl
 
 %post
-    apt-get update && apt-get install -y emacs pipx
+    apt-get update && apt-get install -y emacs
 
-    pipx install poetry==1.8.2
-
-    cd /home/usr/
-
-    micromamba env create -f mini_calicost.yaml
-
-    # TODO
-    # eval "$(micromamba shell hook --shell bash)"
-
-    micromamba activate mini_calicost
-
-    # TODO HACK see equivalent cp above.
-    # git clone https://github.com/raphael-group/CalicoST.git /home/usr/CalicoST
-
-    # NB add -e for editable source
-    # cd /home/usr/CalicoST; /opt/conda/envs/calicost/bin/pip install --no-deps -e .
-
-    # poetry install
-
+    pip install /home/usr/calicost/dist/calicost-1.0.0-py3-none-any.whl
 
 %runscript
     /bin/bash
