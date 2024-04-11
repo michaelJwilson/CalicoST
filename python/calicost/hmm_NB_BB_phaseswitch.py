@@ -518,7 +518,7 @@ def viterbi_nb_bb_sitewise(X, lengths, base_nb_mean, log_mu, alphas, total_bb_RD
         cumlen += le
     return labels, merged_labels
 
-@profile
+
 def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop=None, \
     hmmclass=hmm_sitewise, params="smp", t=1-1e-6, random_state=0, \
     in_log_space=True, only_minor=False, fix_NB_dispersion=False, shared_NB_dispersion=True, fix_BB_dispersion=False, shared_BB_dispersion=True, \
