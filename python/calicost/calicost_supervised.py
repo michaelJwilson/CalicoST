@@ -14,16 +14,16 @@ import copy
 from pathlib import Path
 import functools
 import subprocess
-from arg_parse import *
-from hmm_NB_BB_phaseswitch import *
-from utils_distribution_fitting import *
-from utils_hmrf import *
-from hmrf import *
-from phasing import *
-from utils_IO import *
-from find_integer_copynumber import *
-from parse_input import *
-from utils_plotting import *
+# from calicost.arg_parse import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.utils_hmrf import *
+# from calicost.hmrf import *
+# from calicost.phasing import *
+# from calicost.utils_IO import *
+# from calicost.find_integer_copynumber import *
+# from calicost.cli.parse_input import *
+# from calicost.utils_plotting import *
 
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
@@ -33,6 +33,25 @@ plt.rcParams.update({'font.size': 14})
 
 import mkl
 mkl.set_num_threads(1)
+
+from calicost.hmm_NB_BB_phaseswitch import (combine_similar_states_across_clones,
+                                            similarity_components_rdrbaf_neymanpearson)
+from calicost.utils_hmrf import (load_hmrf_last_iteration, rectangle_initialize_initial_clone,
+                                 rectangle_initialize_initial_clone_mix, reorder_results)
+from calicost.hmrf import (aggr_hmrf_reassignment, aggr_hmrfmix_reassignment,
+                           hmrf_concatenate_pipeline, hmrf_reassignment_posterior,
+                           hmrfmix_concatenate_pipeline, hmrfmix_reassignment_posterior,
+                           merge_by_minspots)
+from calicost.phasing import pipeline_baum_welch
+from calicost.utils_IO import (bin_selection_basedon_normal, expand_df_cnv, filter_de_genes_tri,
+                               summary_events)
+from calicost.find_integer_copynumber import (get_genelevel_cnv_oneclone,
+                                              hill_climbing_integer_copynumber_fixdiploid,
+                                              hill_climbing_integer_copynumber_oneclone)
+from calicost.cli.parse_input import run_parse_n_load
+from calicost.utils_plotting import (merge_pseudobulk_by_index, merge_pseudobulk_by_index_mix,
+                                     plot_acn_from_df, plot_clones_in_space, plot_rdr_baf,
+                                     read_configuration_file, read_joint_configuration_file)
 
 
 def main(configuration_file):

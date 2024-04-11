@@ -9,11 +9,17 @@ logger = logging.getLogger(__name__)
 import copy
 import functools
 import subprocess
-from calicost.arg_parse import *
-from calicost.hmm_NB_BB_phaseswitch import *
-from calicost.parse_input import *
-from calicost.utils_hmrf import *
-from calicost.hmrf import *
+# from calicost.arg_parse import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.cli.parse_input import *
+# from calicost.utils_hmrf import *
+# from calicost.hmrf import *
+from calicost.cli.parse_input import (argparse, read_configuration_file,
+                                      read_joint_configuration_file, run_parse_n_load)
+from calicost.utils_hmrf import (estimator_tumor_proportion, identify_loh_per_clone,
+                                 identify_normal_spots, load_hmrf_last_iteration,
+                                 multislice_adjacency, rectangle_initialize_initial_clone)
+from calicost.hmrf import hmrf_concatenate_pipeline, merge_by_minspots
 
 
 def main(configuration_file):

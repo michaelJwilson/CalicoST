@@ -13,10 +13,6 @@ import scanpy as sc
 import scipy
 from sklearn.metrics import adjusted_rand_score
 
-# from calicost.arg_parse import *
-# from calicost.phasing import *
-# from calicost.utils_IO import *
-
 from calicost.arg_parse import read_configuration_file, read_joint_configuration_file
 from calicost.utils_hmrf import multislice_adjacency
 from calicost.phasing import initial_phase_given_partition, perform_partition

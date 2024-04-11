@@ -10,10 +10,10 @@ import logging
 import copy
 from pathlib import Path
 import subprocess
-from hmm_NB_BB_phaseswitch import *
-from utils_distribution_fitting import *
-from hmrf import *
-from utils_IO import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.hmrf import *
+# from calicost.utils_IO import *
 
 
 def read_joint_configuration_file(filename):

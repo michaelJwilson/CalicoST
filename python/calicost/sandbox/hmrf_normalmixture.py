@@ -8,10 +8,10 @@ from sklearn.metrics import adjusted_rand_score
 from tqdm import trange
 import copy
 from pathlib import Path
-from hmm_NB_BB_phaseswitch import *
-from utils_distribution_fitting import *
-from utils_IO import *
-from simple_sctransform import *
+from calicost.hmm_NB_BB_phaseswitch import *
+from calicost.utils_distribution_fitting import *
+from calicost.utils_IO import *
+from calicost.simple_sctransform import *
 
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning
