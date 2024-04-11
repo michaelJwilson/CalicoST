@@ -1,4 +1,4 @@
-# NB snakemake --cores 16 --configfile config.yaml --snakefile calicost.smk all (--keep-going) (--use-conda) (--use-singularity)
+# NB snakemake --cores 16 --configfile examples/CalicoST_example/config.yaml --snakefile calicost.smk all --use-singularity (--keep-going) (--use-conda)
 import numpy as np
 import pandas as pd
 import scipy
