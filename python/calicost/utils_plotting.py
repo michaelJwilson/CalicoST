@@ -14,11 +14,14 @@ import seaborn
 from matplotlib.lines import Line2D
 import matplotlib.patches as mpatches
 
-from calicost.utils_IO import *
-from calicost.utils_phase_switch import *
-from calicost.hmrf import *
-from calicost.arg_parse import *
+# from calicost.utils_IO import *
+# from calicost.utils_phase_switch import *
+# from calicost.hmrf import *
+# from calicost.arg_parse import *
 
+from calicost.utils_phase_switch import get_intervals
+from calicost.hmrf import copy, merge_pseudobulk_by_index, merge_pseudobulk_by_index_mix
+from calicost.arg_parse import read_configuration_file, read_joint_configuration_file
 
 def get_full_palette():
     palette = {}

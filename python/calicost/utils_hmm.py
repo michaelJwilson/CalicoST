@@ -4,8 +4,12 @@ import copy
 import scipy.special
 from tqdm import trange
 from sklearn.mixture import GaussianMixture
-from calicost.utils_distribution_fitting import *
-
+# from calicost.utils_distribution_fitting import *
+from calicost.utils_distribution_fitting import (Weighted_BetaBinom,
+                                                 Weighted_BetaBinom_fixdispersion,
+                                                 Weighted_BetaBinom_fixdispersion_mix,
+                                                 Weighted_BetaBinom_mix, Weighted_NegativeBinomial,
+                                                 Weighted_NegativeBinomial_mix, sm)
 
 @njit
 def np_max_ax_squeeze(arr, axis=0):

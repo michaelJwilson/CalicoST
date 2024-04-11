@@ -10,6 +10,20 @@
 - startle snakemake rule?
 - sandbox deprecation
 
+### Warnings
+Warning: hmm_NB_BB_phaseswitch.py: 'compute_posterior_obs' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_bb_sitewise_uniqvalues' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_bb_sitewise_uniqvalues_mix' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'compute_posterior_transition_sitewise' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_nb_sitewise_uniqvalues_mix' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'initialization_by_gmm' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_startprob_sitewise' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'np_sum_ax_squeeze' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
+Warning: hmm_NB_BB_phaseswitch.py: 'construct_unique_matrix' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_emission_params_nb_sitewise_uniqvalues' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'mylogsumexp' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
+Warning: hmm_NB_BB_phaseswitch.py: 'update_transition_sitewise' comes from multiple modules: 'calicost.utils_hmm', 'calicost.hmm_NB_BB_nophasing'. Using 'calicost.hmm_NB_BB_nophasing'.
+Warning: hmm_NB_BB_phaseswitch.py: 'convert_params' comes from multiple modules: 'calicost.utils_hmm', 'calicost.utils_distribution_fitting', 'calicost.hmm_NB_BB_nophasing', 'calicost.hmm_NB_BB_nophasing_v2'. Using 'calicost.hmm_NB_BB_nophasing_v2'.
 
 ### NOTES
 - How to pin conda: http://damianavila.github.io/blog/posts/how-to-pin-conda.html

@@ -83,7 +83,7 @@ def load_data(spaceranger_dir, snp_dir, filtergenelist_file, filterregion_file, 
     genenames = set(list(adata.var.index[indicator]))
     adata = adata[:, indicator]
     print(adata)
-    print("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+    logger.info("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     # remove genes in filtergenelist_file
     # ig_gene_list = pd.read_csv("/n/fs/ragr-data/users/congma/references/cellranger_refdata-gex-GRCh38-2020-A/genes/ig_gene_list.txt", header=None)
@@ -92,7 +92,7 @@ def load_data(spaceranger_dir, snp_dir, filtergenelist_file, filterregion_file, 
         filter_gene_list = set(list( filter_gene_list.iloc[:,0] ))
         indicator_filter = np.array([ (not x in filter_gene_list) for x in adata.var.index ])
         adata = adata[:, indicator_filter]
-        print("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+        logger.info("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     if not filterregion_file is None:
         regions = pd.read_csv(filterregion_file, header=None, sep="\t", names=["Chrname", "Start", "End"])
@@ -252,14 +252,14 @@ def load_joint_data(input_filelist, snp_dir, alignment_files, filtergenelist_fil
     genenames = set(list(adata.var.index[indicator]))
     adata = adata[:, indicator]
     print(adata)
-    print("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+    logger.info("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     if not filtergenelist_file is None:
         filter_gene_list = pd.read_csv(filtergenelist_file, header=None)
         filter_gene_list = set(list( filter_gene_list.iloc[:,0] ))
         indicator_filter = np.array([ (not x in filter_gene_list) for x in adata.var.index ])
         adata = adata[:, indicator_filter]
-        print("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+        logger.info("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     if not filterregion_file is None:
         regions = pd.read_csv(filterregion_file, header=None, sep="\t", names=["Chrname", "Start", "End"])
@@ -358,14 +358,14 @@ def filter_genes_barcodes_hatchetblock(adata, cell_snp_Aallele, cell_snp_Ballele
     genenames = set(list(adata.var.index[indicator]))
     adata = adata[:, indicator]
     print(adata)
-    print("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+    logger.info("median UMI after filtering out genes < 0.5% of cells = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     if not config["filtergenelist_file"] is None:
         filter_gene_list = pd.read_csv(config["filtergenelist_file"], header=None)
         filter_gene_list = set(list( filter_gene_list.iloc[:,0] ))
         indicator_filter = np.array([ (not x in filter_gene_list) for x in adata.var.index ])
         adata = adata[:, indicator_filter]
-        print("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
+        logger.info("median UMI after filtering out genes in filtergenelist_file = {}".format( np.median(np.sum(adata.layers["count"], axis=1)) ))
 
     if not config["filterregion_file"] is None:
         regions = pd.read_csv(config["filterregion_file"], header=None, sep="\t", names=["Chrname", "Start", "End"])

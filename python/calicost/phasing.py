@@ -12,12 +12,14 @@ import networkx as nx
 from tqdm import trange
 import copy
 from pathlib import Path
-from calicost.hmm_NB_BB_phaseswitch import *
-from calicost.utils_distribution_fitting import *
-from calicost.utils_hmrf import *
+# from calicost.hmm_NB_BB_phaseswitch import *
+# from calicost.utils_distribution_fitting import *
+# from calicost.utils_hmrf import *
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning
-
+from calicost.hmm_NB_BB_phaseswitch import hmm_sitewise, pipeline_baum_welch
+from calicost.utils_hmrf import (fixed_rectangle_initialization, fixed_rectangle_initialization_mix,
+                                 merge_pseudobulk_by_index, merge_pseudobulk_by_index_mix)
 
 def infer_initial_phase(single_X, lengths, single_base_nb_mean, single_total_bb_RD, n_states, log_sitewise_transmat, \
     params, t, random_state, fix_NB_dispersion, shared_NB_dispersion, fix_BB_dispersion, shared_BB_dispersion, max_iter, tol):
