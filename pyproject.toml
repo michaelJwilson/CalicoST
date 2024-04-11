@@ -27,6 +27,10 @@ packages = [
     { include = "calicost", from = "python"},
 ]
 
+exclude = [
+    { path = "sandbox/" },
+]
+
 [tool.poetry.scripts]
 calicost = "calicost.cli.calicost:main"
 parse_input = "calicost.cli.parse_input:main"
