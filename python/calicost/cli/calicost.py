@@ -1,3 +1,4 @@
+import time
 import copy
 import functools
 import logging
@@ -28,6 +29,8 @@ logger = logging.getLogger()
 
 
 def main():
+    start_time = time.time()
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--configfile", help="configuration file of CalicoST", required=True, type=str)
     args = parser.parse_args()
@@ -448,7 +451,7 @@ def main():
                 fig = plot_individual_spots_in_space(coords, assignment, single_tumor_prop, sample_list=sample_list, sample_ids=sample_ids)
                 fig.savefig(f"{outdir}/plots/clone_spatial.pdf", transparent=True, bbox_inches="tight")
 
-    logger.info("CalicoST complete.")
+    logger.info("CalicoST complete in {time.time() - start_time:.3f} [s].")
 
 if __name__ == "__main__":
     # kernprof -l -v calicost -c config.yaml
