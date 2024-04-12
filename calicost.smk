@@ -191,7 +191,7 @@ rule prepare_calicost_data:
     params:
         outputdir="{outputdir}",
     threads: 16
-    container: f"{config['calicost_container']}"
+    # container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/prepare_calicost_data.log"
     shell:
@@ -213,7 +213,7 @@ rule run_calicost:
         outputdir="{outputdir}",
         r="{r}"
     threads: 32
-    container: f"{config['calicost_container']}"
+    # container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
     shell:
