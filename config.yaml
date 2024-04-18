@@ -1,5 +1,5 @@
 # paths to environment executables or their parent directories
-calicost_dir: <Replace with the path tpo git cloned CalicoST directory>
+calicost_dir: <Replace with the path to git cloned CalicoST directory>
 eagledir: <Replace with downloaded Eagle2 directory>
 
 # paths to required resource files
