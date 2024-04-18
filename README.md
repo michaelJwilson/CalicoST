@@ -137,7 +137,7 @@ The above example snakemake run will create a folder `calicost` in the directory
 * clone_labels.tsv: The inferred clone labels for each spot.
 * cnv_seglevel.tsv: Allele-specific copy numbers for each clone for each genome segment.
 * cnv_genelevel.tsv: The projected allele-specific copy numbers from genome segments to the covered genes.
-* cnv_{ploidy}_seglevel.tsv, cnv_{ploidy}_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment or gene.
+* cnv_<ploidy>_seglevel.tsv, cnv_<ploidy>_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment or gene.
 
 See the following examples of the key files.
 ```
