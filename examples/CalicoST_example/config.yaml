@@ -31,11 +31,11 @@ nthreads_cellsnplite: 32
 chromosomes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
 # CalicoST parameters
-random_state: [0]
+random_state: [0, 1, 2, 3, 4]
 
 # HMRF configurations
 # TODO HACK n_clones: 3
-n_clones : 1
+n_clones : 3
 n_clones_rdr : 2
 min_spots_per_clone : 100
 min_avgumi_per_clone : 10
@@ -43,7 +43,7 @@ maxspots_pooling : 7
 tumorprop_threshold : 0.5
 
 # TODO HACK max_iter_outer : 20
-max_iter_outer : 10
+max_iter_outer : 20
 nodepotential : weighted_sum
 initialization_method : rectangle
 spatial_weight : 1.0
