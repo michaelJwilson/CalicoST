@@ -1,8 +1,8 @@
+# NB snakemake --cores 16 --configfile examples/CalicoST_example/config.yaml --snakefile calicost.smk all --use-singularity (--keep-going) (--use-conda)
 import numpy as np
 import pandas as pd
 import scipy
 import calicost.arg_parse
-import calicost.parse_input
 
 
 rule all:
@@ -25,29 +25,33 @@ rule link_or_merge_bam:
     run:
         if "bamlist" in config:
             # merged BAM file
-            shell(f"python {config['calicost_dir']}/utils/merge_bamfile.py -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
-            shell(f"{config['samtools']} sort -m {params.samtools_sorting_mem} -o {output.bam} {params.outputdir}/unsorted_possorted_genome_bam.bam >> {log} 2>&1")
-            shell(f"{config['samtools']} index {output.bam}")
+            shell(f"merge_bamfile -b {config['bamlist']} -o {params.outputdir}/ >> {log} 2>&1")
+            shell(f"samtools sort -m {params.samtools_sorting_mem} -o {output.bam} {params.outputdir}/unsorted_possorted_genome_bam.bam >> {log} 2>&1")
+            shell(f"samtools index {output.bam}")
             shell(f"rm -fr {params.outputdir}/unsorted_possorted_genome_bam.bam")
             
             # merged barcodes
             df_entries = pd.read_csv(config["bamlist"], sep='\t', index_col=None, header=None)
             df_barcodes = []
+	    
             for i in range(df_entries.shape[0]):
                 tmpdf = pd.read_csv(f"{df_entries.iloc[i,2]}/filtered_feature_bc_matrix/barcodes.tsv.gz", header=None, index_col=None)
                 tmpdf.iloc[:,0] = [f"{x}_{df_entries.iloc[i,1]}" for x in tmpdf.iloc[:,0]]
                 df_barcodes.append( tmpdf )
+
             df_barcodes = pd.concat(df_barcodes, ignore_index=True)
             df_barcodes.to_csv(f"{output.barcodefile}", sep='\t', index=False, header=False)
         else:
             # BAM file
             assert "spaceranger_dir" in config
-            print("softlink of possorted_genome_bam.bam")
-            shell(f"ln -sf -T {config['spaceranger_dir']}/possorted_genome_bam.bam {output.bam}")
-            shell(f"ln -sf -T {config['spaceranger_dir']}/possorted_genome_bam.bam.bai {output.bai}")
-            # barcodes
-            shell(f"gunzip -c {config['spaceranger_dir']}/filtered_feature_bc_matrix/barcodes.tsv.gz > {output.barcodefile}")
 
+	    print("softlink of possorted_genome_bam.bam")
+
+	    shell(f"ln -sf -T {config['spaceranger_dir']}/possorted_genome_bam.bam {output.bam}")
+            shell(f"ln -sf -T {config['spaceranger_dir']}/possorted_genome_bam.bam.bai {output.bai}")
+
+	    # barcodes
+            shell(f"gunzip -c {config['spaceranger_dir']}/filtered_feature_bc_matrix/barcodes.tsv.gz > {output.barcodefile}")
 
 
 rule genotype:
@@ -65,16 +69,16 @@ rule genotype:
         "{outputdir}/logs/genotyping.log"
     run:
         shell(f"mkdir -p {params.outputdir}/genotyping")
-        command = f"{config['cellsnplite']} -s {input.bam} " + \
+        command = f"cellsnplite -s {input.bam} " + \
              f"-b {input.barcodefile} " + \
              f"-O {params.outputdir}/genotyping/ " + \
              f"-R {params.region_vcf} " + \
              f"-p {threads} " + \
              f"--minMAF 0 --minCOUNT 2 --UMItag {config['UMItag']} --cellTAG {config['cellTAG']} --gzip >> {log} 2>&1"
-        print(command)
+
+	print(command)
         shell(command)
         
-
 
 rule pre_phasing:
     input:
@@ -86,11 +90,15 @@ rule pre_phasing:
     threads: 1
     run:
         shell(f"mkdir -p {params.outputdir}/phasing")
-        print(f"python {config['calicost_dir']}/utils/filter_snps_forphasing.py -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
-        shell(f"python {config['calicost_dir']}/utils/filter_snps_forphasing.py -c {params.outputdir}/genotyping -o {params.outputdir}/phasing")
+
+	command = f"filter_snps_forphasing -c {params.outputdir}/genotyping -o {params.outputdir}/phasing"
+
+        print(command)
+	shell(command)
+	
         for chrname in config["chromosomes"]:
-            shell(f"{config['bgzip']} -f {params.outputdir}/phasing/chr{chrname}.vcf")
-            shell(f"{config['tabix']} -f {params.outputdir}/phasing/chr{chrname}.vcf.gz")
+            shell(f"bgzip -f {params.outputdir}/phasing/chr{chrname}.vcf")
+            shell(f"tabix -f {params.outputdir}/phasing/chr{chrname}.vcf.gz")
 
 
 rule phasing:
@@ -101,18 +109,16 @@ rule phasing:
     params:
         outputdir="{outputdir}",
         chrname="{chrname}",
-    threads: 2
     log:
-        "{outputdir}/logs/phasing_chr{chrname}.log",
-    run:
-        command = f"{config['eagledir']}/eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
-            f"--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
-            f"--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
-            f"--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
-        shell(command)
+        "{outputdir}/logs/phasing_chr{chrname}.log"
+    threads: 16
+    shell:
+        "eagle --numThreads {threads} --vcfTarget {input.vcf} " + \
+        "--vcfRef {config['phasing_panel']}/chr{params.chrname}.genotypes.bcf " + \
+        "--geneticMapFile={config['eagledir']}/tables/genetic_map_hg38_withX.txt.gz "+ \
+        "--outPrefix {params.outputdir}/phasing/chr{params.chrname}.phased >> {log} 2>&1"
         
-
-
+        
 rule parse_final_snp:
     input:
         "{outputdir}/genotyping/cellSNP.base.vcf.gz",
@@ -126,11 +132,9 @@ rule parse_final_snp:
     threads: 1
     log:
         "{outputdir}/logs/parse_final_snp.log"
-    run:
-        command = f"python {config['calicost_dir']}/utils/get_snp_matrix.py " + \
-            f"-c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
-        shell( command )
-
+    shell:
+        "get_snp_matrix -c {params.outputdir}/genotyping -e {params.outputdir}/phasing -b {params.outputdir}/barcodes.txt -o {params.outputdir}/ >> {log} 2>&1"
+        
 
 rule write_calicost_configfile:
     input:
@@ -148,15 +152,18 @@ rule write_calicost_configfile:
         else:
             calicost_config = calicost.arg_parse.get_default_config_single()
         
-        # update input
+        # NB update input
         calicost_config['snp_dir'] = "/".join( input[0].split("/")[:-1] )
         calicost_config['output_dir'] = f"{params.outputdir}"
+	
         if 'spaceranger_dir' in calicost_config:
             assert 'spaceranger_dir' in config
             calicost_config['spaceranger_dir'] = config['spaceranger_dir']
+	    
         if 'input_filelist' in calicost_config:
             assert 'bamlist' in config
             calicost_config['input_filelist'] = config['bamlist']
+	    
             if Path(f"{config['output_snpinfo']}/merged_deconvolution.tsv").exists():
                 calicost_config['tumorprop_file'] = f"{config['output_snpinfo']}/merged_deconvolution.tsv"
 
@@ -183,12 +190,12 @@ rule prepare_calicost_data:
         f"{{outputdir}}/initial_phase.npz"
     params:
         outputdir="{outputdir}",
-    threads: 1
+    threads: 16
+    # container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/prepare_calicost_data.log"
-    run:
-        command = f"OMP_NUM_THREADS=1 python {config['calicost_dir']}/src/calicost/parse_input.py -c {input[0]} >> {log} 2>&1"
-        shell(command)
+    shell:
+        "parse_input -c {input[0]} >> {log} 2>&1"
 
 
 rule run_calicost:
@@ -205,10 +212,10 @@ rule run_calicost:
     params:
         outputdir="{outputdir}",
         r="{r}"
-    threads: 1
+    threads: 32
+    # container: f"{config['calicost_container']}"
     log:
         "{outputdir}/logs/calicost_run_{r}.log"
-    run:
-        command = f"OMP_NUM_THREADS=1 python {config['calicost_dir']}/src/calicost/calicost_main.py -c {input[0]} >> {log} 2>&1"
-        shell(command)
-        shell(f"echo {command} > {output}")
+    shell:
+        "calicost -c {input[0]} >> {log} 2>&1"
+	

@@ -1,0 +1,12 @@
+# NB see http://damianavila.github.io/blog/posts/how-to-pin-conda.html
+numpy==1.24.4
+scipy==1.11.3
+pandas==2.1.1
+scikit-learn==1.3.2
+tqdm==4.66.1
+statsmodels==0.14.0
+numba==0.57.1
+scanpy==1.9.6
+anndata==0.10.3
+snakemake==7.32.4
+pysam==0.22.0

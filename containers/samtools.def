@@ -1,0 +1,28 @@
+# NB apptainer build ./samtools.sif ./samtools.def;
+#    images are cached to $HOME/.apptainer/cache
+#
+Bootstrap: docker
+
+From: quay.io/biocontainers/samtools:1.18--h50ea8bc_1
+Stage: build
+
+%environment
+    export PATH=/home/usr/bin/:$PATH
+
+%files
+    ../README.md /home/usr/README.md
+
+%runscript
+    /bin/bash
+
+%test
+    echo "NO AVAILABLE TESTS FOR SAMTOOLS CONTAINER"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container for samtools.
+
+

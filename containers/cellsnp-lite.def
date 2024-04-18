@@ -1,0 +1,30 @@
+# NB apptainer build ./cellsnp-lite.sif ./cellsnp-lite.def;
+#    images are cached to $HOME/.apptainer/cache
+#
+Bootstrap: docker
+
+# NB quay.io/biocontainers/cellsnp-lite:1.2.3--h6141fd1_2
+#    see https://quay.io/repository/biocontainers/cellsnp-lite?tab=tags&tag=latest
+From: quay.io/biocontainers/cellsnp-lite:1.2.3--h6141fd1_2
+Stage: build
+
+%environment
+    export PATH=/home/usr/bin/:$PATH
+
+%files
+    ../README.md /home/usr/README.md
+
+%runscript
+    /bin/bash
+
+%test
+    echo "NO AVAILABLE TESTS FOR CELLSNP-LITE CONTAINER"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container for variant calling with cellsnp-lite.
+
+

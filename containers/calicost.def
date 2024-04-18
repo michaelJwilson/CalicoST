@@ -1,0 +1,28 @@
+# NB (rm ./calicost.sif); apptainer build -F --build-arg-file ./config.txt ./calicost.sif ./calicost.def;
+#    images are cached to $HOME/.apptainer/cache
+# 
+Bootstrap: docker
+
+From: python:3.10.14
+Stage: build
+
+%files
+    ../dist/calicost-1.0.0-py3-none-any.whl /home/usr/calicost/dist/calicost-1.0.0-py3-none-any.whl
+
+%post
+    apt-get update && apt-get install -y emacs
+
+    pip install /home/usr/calicost/dist/calicost-1.0.0-py3-none-any.whl
+
+%runscript
+    /bin/bash
+
+%test
+    echo "NO AVAILABLE TESTS FOR {{ ENV_NAME }}"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container related to dev. for Calico-ST.

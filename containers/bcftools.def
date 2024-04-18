@@ -1,0 +1,28 @@
+# NB apptainer build ./bcftools.sif ./bcftools.def;
+#    images are cached to $HOME/.apptainer/cache
+#
+Bootstrap: docker
+
+From: quay.io/biocontainers/bcftools:1.18--h8b25389_0
+Stage: build
+
+%environment
+    export PATH=/home/usr/bin/:$PATH
+
+%files
+    ../README.md /home/usr/README.md
+
+%runscript
+    /bin/bash
+
+%test
+    echo "NO AVAILABLE TESTS FOR BCFTOOLS CONTAINER"
+
+%labels
+    Author Michael J. Wilson
+    Version v0.0.1
+
+%help
+    This is a basic container for bcftools.
+
+

@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Apptainer build containers
+*.sif
+
+#
+build/
+containers/deprecated/
+
+.snakemake/
