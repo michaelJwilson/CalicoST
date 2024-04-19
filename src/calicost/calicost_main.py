@@ -42,6 +42,8 @@ def main(configuration_file):
     copy_single_base_nb_mean = copy.copy(single_base_nb_mean)
     single_X[:,0,:] = 0
     single_base_nb_mean[:,:] = 0
+
+    Path(f"{config['output_dir']}").mkdir(parents=True, exist_ok=True)
     
     # run HMRF
     for r_hmrf_initialization in range(config["num_hmrf_initialization_start"], config["num_hmrf_initialization_end"]):
