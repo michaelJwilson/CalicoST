@@ -4,3 +4,8 @@
 - setup.py numpy dependency only available in CalicoST directory (!).  Is this a new shell thing?
 - /Genomics/argo/users/mw9568/repos/CalicoST/GRCh38_resources/genetic_map_GRCh38_merged.tab(.gz)
 - snakemake is not recognising variables that change the config.
+- broken links:  https://calicost.readthedocs.io/en/latest/installation; should be https://calicost.readthedocs.io/en/latest/installation.html
+- broken link: Browse the Tutorials to get started with CalicoST here.
+- remove example_config from CalicoST example.
+- only linked to pip install if conda activated in repo directory?
+- 
