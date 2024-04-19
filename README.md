@@ -59,8 +59,8 @@ perl and python3, as listed by the required paths.
 
 # Getting started
 ### Preprocessing: genotyping and reference-based phasing
-To infer allele-specific CNAs, we generate allele count matrices in a preprocessing step.  We followed the recommended pipeline by [Numbat](https://kharchenkolab.github.io/numbat/), which is designed for scRNA-seq data to infer clones and CNAs: first genotyping the BAM file with cellsnp-lite (included in the conda environment) and reference-based phasing by Eagle2. Download the following panels for genotyping and reference-based phasing.
-* [SNP panel](https://sourceforge.net/projects/cellsnp/files/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz) - 0.5GB in size. You can also choose other SNP panels from [cellsnp-lite webpage](https://cellsnp-lite.readthedocs.io/en/latest/main/data.html).
+To infer allele-specific CNAs, we generate allele count matrices in this preprocessing step.  We followed the recommended pipeline by [Numbat](https://kharchenkolab.github.io/numbat/), which is designed for scRNA-seq data to infer clones and CNAs: first genotyping the BAM file with cellsnp-lite (included in the conda environment) and reference-based phasing by Eagle2. Download the following panels for genotyping and reference-based phasing.
+* [SNP panel](https://sourceforge.net/projects/cellsnp/files/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz) - 0.5GB in size. You can also choose other SNP panels from [cellsnp-lite webpage](https://cellsnp-lite.readthedocs.io/en/latest/main/data.html#data-list-of-common-snps).
 * [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip)- 9.0GB in size.  Unzip the panel after downloading.
 
 Replace the following paths in `config.yaml`:
@@ -70,7 +70,7 @@ Replace the following paths in `config.yaml`:
 * `spaceranger_dir`: Replace with the spaceranger directory of your Visium data, which should contain the BAM file `possorted_genome_bam.bam`.
 * `output_snpinfo`: Replace with the desired output directory.
 
-Then you can run the pre-processing pipeline by
+Then you can run the preprocessing pipeline with
 ```
 snakemake --cores <number cores> --configfile config.yaml --snakefile calicost.smk all
 ```
