@@ -272,13 +272,21 @@ if __name__ == "__main__":
             )
 
     
-    truth_runtime = 3.599         
+    truth_runtime = 3.599 # [seconds]        
     truth_log_emission_rdr = np.load("log_emission_rdr.npy")
     truth_log_emission_baf = np.load("log_emission_baf.npy")
 
     pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
+    pl.xlabel("Original log(RDR)")
+    pl.ylabel("New log(RDR)")
     pl.show()
-
+    
+    """
+    pl.loglog(-truth_log_emission_baf.ravel(), -log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
+    pl.xlabel("Original log(BAF)")
+    pl.ylabel("New log(BAF)")
+    pl.show()
+    """
     """
     # plot the data colored by the MAP estimate of the hidden states
     RDR = X[:, 0, 0] / base_nb_mean[:, 0]
