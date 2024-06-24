@@ -83,6 +83,7 @@ def get_log_betabinomial(
         + get_log_gamma(nn - kk + bb)
         + get_log_gamma(aa + bb)
     )
+    
     result -= (
         log_gamma_kk
         + log_gamma_nn_kk
@@ -95,7 +96,7 @@ def get_log_betabinomial(
 
 
 @njit(cache=True, parallel=True)
-def compute_emission_probability_nb_betabinom_mix(
+def compute_emission_probability_nb_betabinom_mix_v1(
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
 ):
     n_states = log_mu.shape[0]
@@ -181,8 +182,8 @@ def compute_emission_probability_nb_betabinom_mix(
                 # kk, nn, aa, bb = np.round(kk), np.round(nn), np.round(aa), np.round(bb)
 
                 # DEPRECATE
-                # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
-
+                # log_emission_baf[ii, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+                
                 log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(
                     nn,
                     kk,
@@ -193,8 +194,8 @@ def compute_emission_probability_nb_betabinom_mix(
     return log_emission_rdr, log_emission_baf
 
 
-@njit(cache=True, parallel=True)
-def compute_emission_probability_nb_betabinom_mix_v2(
+# @njit(cache=True, parallel=True)
+def compute_emission_probability_nb_betabinom_mix(
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
 ):
     n_states = log_mu.shape[0]
@@ -232,7 +233,7 @@ def compute_emission_probability_nb_betabinom_mix_v2(
 
                 # DEPRECATE
                 # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
-
+                
                 log_emission_rdr[ii, idx_nonzero_rdr, s] = get_log_negbinomial(
                     nn, pp, kk, log_factorial_kk=log_factorial_kk
                 )
@@ -274,33 +275,18 @@ def compute_emission_probability_nb_betabinom_mix_v2(
 
                 interim = this_weighted_tp + 0.5 * (1.0 - this_weighted_tp)
 
-                mix_p_A = p_binom[ii, s] * interim
-                mix_p_B = (1.0 - p_binom[ii, s]) * interim
+                mix_p_A = p_binom[ii, s]
+                mix_p_B = (1.0 - p_binom[ii, s])
 
-                aa, bb = mix_p_A * taus[ii, s], mix_p_B * taus[ii, s]
-
-                # TODO
-                # kk, nn, aa, bb = np.round(kk), np.round(nn), np.round(aa), np.round(bb)
-
+                # TODO BUG? taus >> 1 for well-defined (integer pseudo counts)
+                # NB norm = (aa + bb) = (interim * taus[ii, s]).
+                norm = interim * taus[ii, s]
+                aa, bb = mix_p_A * norm, mix_p_B * norm
+                
                 # DEPRECATE
-                # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
-
-                # interim = (
-                #     log_gamma_nn
-                #     + get_log_gamma(kk + aa)
-                #     + get_log_gamma(nn - kk + bb)
-                #     + get_log_gamma(aa + bb)
-                # )
-                #
-                # interim -= (
-                #     log_gamma_kk
-                #    + log_gamma_nn_kk
-                #    + get_log_gamma(nn + aa + bb)
-                #    + get_log_gamma(aa)
-                #    + get_log_gamma(bb)
-                # )
-
-                log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(
+                # log_emission_baf[ii, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+                
+                log_emission_baf[ii, idx_nonzero_baf, s] = get_log_betabinomial(
                     nn,
                     kk,
                     aa,
@@ -309,5 +295,5 @@ def compute_emission_probability_nb_betabinom_mix_v2(
                     log_gamma_kk=log_gamma_kk,
                     log_gamma_nn_kk=log_gamma_nn_kk,
                 )
-
+                
     return log_emission_rdr, log_emission_baf

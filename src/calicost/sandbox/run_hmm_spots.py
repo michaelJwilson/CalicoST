@@ -227,8 +227,12 @@ if __name__ == "__main__":
     
     tumor_prop = np.ones((n_obs, n_spots))
 
+    np.random.seed(314)
+    
     alphas = np.random.uniform(low=0.0, high=1.0, size=(n_obs, n_spots))
-    taus = np.random.uniform(low=0.0, high=1.0, size=(n_obs, n_spots))
+
+    # TODO HACK
+    taus = np.random.uniform(low=100.0, high=200.0, size=(n_obs, n_spots))
     
     # NB jit compilation.
     compute_emission_probability_nb_betabinom_mix(
@@ -256,10 +260,10 @@ if __name__ == "__main__":
                 taus,
                 tumor_prop,
             )
-            
-            np.save("log_emission_rdr.npy", log_emission_rdr)
-            np.save("log_emission_baf.npy", log_emission_baf)
             """
+            # np.save("log_emission_rdr.npy", log_emission_rdr)
+            # np.save("log_emission_baf.npy", log_emission_baf)
+            
             log_emission_rdr, log_emission_baf = compute_emission_probability_nb_betabinom_mix(
                 X,
                 base_nb_mean,
@@ -270,22 +274,21 @@ if __name__ == "__main__":
                 taus,
                 tumor_prop,
             )
-
+            
     truth_runtime = 3.599 # [seconds]        
     truth_log_emission_rdr = np.load("log_emission_rdr.npy")
     truth_log_emission_baf = np.load("log_emission_baf.npy")
 
-    pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
-    pl.xlabel("Original log(RDR)")
-    pl.ylabel("New log(RDR)")
-    pl.show()
+    # pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
+    # pl.xlabel("Original -log(RDR)")
+    # pl.ylabel("New -log(RDR)")
+    # pl.show()
 
-    """
-    pl.loglog(-truth_log_emission_baf.ravel(), -log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
-    pl.xlabel("Original log(BAF)")
-    pl.ylabel("New log(BAF)")
+    pl.plot(truth_log_emission_baf.ravel(), log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
+    pl.xlabel("Original BAF")
+    pl.ylabel("New BAF")
     pl.show()
-    """
+    
     """
     # plot the data colored by the MAP estimate of the hidden states
     RDR = X[:, 0, 0] / base_nb_mean[:, 0]
