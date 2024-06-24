@@ -29,7 +29,7 @@ def convert_params(mean, std, round_counts=False):
     """
     p = mean/std**2
     n = mean*p/(1.0 - p)
-
+ 
     if round_counts:
         n = np.round(n)
     
