@@ -19,6 +19,7 @@ def test_gamma():
 def test_negbinomial():
     kk, nn, pp = np.array([20, 8]), np.array([30, 10]), np.array([0.25, 0.41118372])
 
+    # NB supports non-integer n, but not k.
     exp = scipy.stats.nbinom.logpmf(kk, nn, pp)
     result = get_log_negbinomial(
         nn,
@@ -26,8 +27,7 @@ def test_negbinomial():
         kk,
     )
 
-    assert_allclose(exp, result)
-
+    assert_allclose(exp, result)    
 
 def test_betabinomial():
     kk, nn, aa, bb = (
@@ -37,6 +37,8 @@ def test_betabinomial():
         np.array([50, 60]),
     )
 
+    # NB returns -inf for non-integer k and nan for non-integer n.
+    #    supports non-integer a,b. 
     exp = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
     result = get_log_betabinomial(
         nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
