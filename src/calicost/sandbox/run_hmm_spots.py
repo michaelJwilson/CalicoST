@@ -271,7 +271,6 @@ if __name__ == "__main__":
                 tumor_prop,
             )
 
-    
     truth_runtime = 3.599 # [seconds]        
     truth_log_emission_rdr = np.load("log_emission_rdr.npy")
     truth_log_emission_baf = np.load("log_emission_baf.npy")
@@ -280,7 +279,7 @@ if __name__ == "__main__":
     pl.xlabel("Original log(RDR)")
     pl.ylabel("New log(RDR)")
     pl.show()
-    
+
     """
     pl.loglog(-truth_log_emission_baf.ravel(), -log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
     pl.xlabel("Original log(BAF)")

@@ -31,9 +31,6 @@ def get_log_factorial(ks):
 
 @njit(cache=True)
 def get_log_gamma(ks):
-    """
-    gamma(n) = (n-1)! for integer n.
-    """
     result = np.zeros(len(ks), dtype=float)
 
     for ii in range(len(ks)):
@@ -53,13 +50,15 @@ def get_log_gamma(ks):
 
 @njit(cache=True)
 def get_log_negbinomial(nn, pp, kk, log_factorial_kk=None):
+    nn, kk = np.round(nn), np.round(kk)
+    
     if log_factorial_kk is None:
         log_factorial_kk = get_log_factorial(kk)
-
+        
     result = nn * np.log(pp) + kk * np.log(1.0 - pp)
     result += get_log_gamma(kk + nn)
-    result -= log_factorial_kk
     result -= get_log_gamma(nn)
+    result -= log_factorial_kk
 
     return result
 
@@ -68,6 +67,9 @@ def get_log_negbinomial(nn, pp, kk, log_factorial_kk=None):
 def get_log_betabinomial(
     nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
 ):
+    nn, kk = np.round(nn), np.round(kk)
+    aa, bb = np.round(aa), np.round(bb)
+    
     if log_gamma_nn is None:
         log_gamma_nn = get_log_gamma(nn + 1)
     if log_gamma_kk is None:
@@ -126,8 +128,6 @@ def compute_emission_probability_nb_betabinom_mix(
 
                 nn, pp = convert_params(nb_mean, nb_std)
                 kk = X[idx_nonzero_rdr, 0, s]
-
-                # nn, kk = np.round(nn), np.round(kk)
 
                 # DEPRECATE
                 # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
@@ -232,14 +232,6 @@ def compute_emission_probability_nb_betabinom_mix_v2(
 
                 # DEPRECATE
                 # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
-
-                # DEPRECATE
-                # log_emission_rdr[ii, idx_nonzero_rdr, s] = nn * np.log(pp) + kk * np.log(
-                #     1.0 - pp
-                # )
-                # log_emission_rdr[ii, idx_nonzero_rdr, s] += get_log_gamma(kk + nn)
-                # log_emission_rdr[ii, idx_nonzero_rdr, s] -= log_factorial_kk
-                # log_emission_rdr[ii, idx_nonzero_rdr, s] -= get_log_gamma(nn)
 
                 log_emission_rdr[ii, idx_nonzero_rdr, s] = get_log_negbinomial(
                     nn, pp, kk, log_factorial_kk=log_factorial_kk
