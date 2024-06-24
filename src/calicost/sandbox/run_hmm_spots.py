@@ -245,7 +245,7 @@ if __name__ == "__main__":
     with ProfileContext() as context:
         for _ in range(nrepeat):
             """
-            # NB 0.229 seconds with no BAF; 0.3 seconds with BAF; 
+            # NB exp. runtime 3.599 seconds.
             log_emission_rdr, log_emission_baf = hmm_nophasing_v2.compute_emission_probability_nb_betabinom_mix(
                 X,
                 base_nb_mean,
@@ -256,11 +256,10 @@ if __name__ == "__main__":
                 taus,
                 tumor_prop,
             )
-
+            
             np.save("log_emission_rdr.npy", log_emission_rdr)
             np.save("log_emission_baf.npy", log_emission_baf)
             """
-            
             log_emission_rdr, log_emission_baf = compute_emission_probability_nb_betabinom_mix(
                 X,
                 base_nb_mean,
@@ -272,13 +271,14 @@ if __name__ == "__main__":
                 tumor_prop,
             )
 
+    
+    truth_runtime = 3.599         
     truth_log_emission_rdr = np.load("log_emission_rdr.npy")
     truth_log_emission_baf = np.load("log_emission_baf.npy")
 
     pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
-    # pl.loglog(-truth_log_emission_rdr.ravel(), -truth_log_emission_rdr.ravel(), c='k')
     pl.show()
-    
+
     """
     # plot the data colored by the MAP estimate of the hidden states
     RDR = X[:, 0, 0] / base_nb_mean[:, 0]
