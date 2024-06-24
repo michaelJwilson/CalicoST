@@ -39,8 +39,8 @@ logger = logging.getLogger()
 
 
 def get_true_clone_cnas():
-    clones = pd.read_csv("data/truth_clone_labels.tsv", header=0, index_col=0, sep="\t")
-    cnas = pd.read_csv("data/true_cnas_per_bin.tsv", header=0, index_col=0, sep="\t")
+    clones = pd.read_csv("calicost/data/truth_clone_labels.tsv", header=0, index_col=0, sep="\t")
+    cnas = pd.read_csv("calicost/data/true_cnas_per_bin.tsv", header=0, index_col=0, sep="\t")
 
     for label in ["clone_0", "clone_1", "clone_2", "normal"]:
         ucns, counts = np.unique(cnas[f"{label}_cn"], return_counts=True)
@@ -54,7 +54,7 @@ def get_true_clone_cnas():
 
 
 def get_data():
-    bin_data = dict(np.load("data/binned_data.npz", allow_pickle=True))
+    bin_data = dict(np.load("calicost/data/binned_data.npz", allow_pickle=True))
 
     # lengths: sum of lengths = n_observations.
     lengths = bin_data["lengths"]
@@ -244,6 +244,7 @@ if __name__ == "__main__":
     
     with ProfileContext() as context:
         for _ in range(nrepeat):
+            """
             # NB 0.229 seconds with no BAF; 0.3 seconds with BAF; 
             log_emission_rdr, log_emission_baf = hmm_nophasing_v2.compute_emission_probability_nb_betabinom_mix(
                 X,
@@ -255,8 +256,11 @@ if __name__ == "__main__":
                 taus,
                 tumor_prop,
             )
-            
+
+            np.save("log_emission_rdr.npy", log_emission_rdr)
+            np.save("log_emission_baf.npy", log_emission_baf)
             """
+            
             log_emission_rdr, log_emission_baf = compute_emission_probability_nb_betabinom_mix(
                 X,
                 base_nb_mean,
@@ -267,13 +271,14 @@ if __name__ == "__main__":
                 taus,
                 tumor_prop,
             )
-            """
-            
-    isin = np.isfinite(log_emission_rdr)
-    result = log_emission_rdr[isin].sum()
 
-    # assert result == 23147775.53720817
-                    
+    truth_log_emission_rdr = np.load("log_emission_rdr.npy")
+    truth_log_emission_baf = np.load("log_emission_baf.npy")
+
+    pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
+    # pl.loglog(-truth_log_emission_rdr.ravel(), -truth_log_emission_rdr.ravel(), c='k')
+    pl.show()
+    
     """
     # plot the data colored by the MAP estimate of the hidden states
     RDR = X[:, 0, 0] / base_nb_mean[:, 0]
