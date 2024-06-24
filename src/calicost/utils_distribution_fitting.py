@@ -21,7 +21,7 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 
 
-def convert_params(mean, std):
+def convert_params(mean, std, round_counts=False):
     """
     Convert mean/dispersion parameterization of a negative binomial to the ones scipy supports
 
@@ -29,6 +29,10 @@ def convert_params(mean, std):
     """
     p = mean/std**2
     n = mean*p/(1.0 - p)
+
+    if round_counts:
+        n = np.round(n)
+    
     return n, p
 
 
