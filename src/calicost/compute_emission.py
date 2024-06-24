@@ -175,23 +175,10 @@ def compute_emission_probability_nb_betabinom_mix(
                 
                 # DEPRECATE
                 # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
-
-                interim = (
-                    get_log_gamma(nn + 1)
-                    + get_log_gamma(kk + aa)
-                    + get_log_gamma(nn - kk + bb)
-                    + get_log_gamma(aa + bb)
-                )
                 
-                interim -= (
-                    get_log_gamma(kk + 1)
-                    + get_log_gamma(nn - kk + 1)
-                    + get_log_gamma(nn + aa + bb)
-                    + get_log_gamma(aa)
-                    + get_log_gamma(bb)
+                log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(
+                    nn, kk, aa, bb,
                 )
-
-                log_emission_baf[ii, idx_nonzero_baf, s] += interim
 
     return log_emission_rdr, log_emission_baf
 
