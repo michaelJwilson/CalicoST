@@ -3,7 +3,7 @@ import scipy
 from numpy.testing import assert_allclose
 from scipy.special import loggamma
 
-from calicost.compute_emission import get_log_gamma, get_log_negbinomial
+from calicost.compute_emission import get_log_gamma, get_log_negbinomial, get_log_betabinomial
 
 
 def test_gamma():
@@ -18,14 +18,28 @@ def test_gamma():
 
 def test_negbinomial():
     kk, nn, pp = np.array([20, 8]), np.array([30, 10]), np.array([0.25, 0.41118372])
-    
+
     exp = scipy.stats.nbinom.logpmf(kk, nn, pp)
     result = get_log_negbinomial(
-        nn, pp, kk,
+        nn,
+        pp,
+        kk,
     )
 
     assert_allclose(exp, result)
 
 
 def test_betabinomial():
-    
+    kk, nn, aa, bb = (
+        np.array([10, 20]),
+        np.array([30, 40]),
+        np.array([10, 20]),
+        np.array([50, 60]),
+    )
+
+    exp = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+    result = get_log_betabinomial(
+        nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
+    )
+
+    assert_allclose(exp, result)
