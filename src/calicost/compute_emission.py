@@ -11,7 +11,7 @@ __log_gamma_table = loggamma(np.arange(__max_gamma))
 def convert_params(mean, std):
     """
     Convert mean/dispersion parameterization of a negative binomial to the ones scipy supports
-    
+
     See
         https://mathworld.wolfram.com/NegativeBinomialDistribution.html
     """
@@ -19,26 +19,28 @@ def convert_params(mean, std):
     n = mean * p / (1.0 - p)
 
     return np.round(n), p
-        
+
+
 @njit(cache=True)
 def get_log_factorial(ks):
     """
     gamma(n + 1) = n! for integer n.
-    """    
+    """
     return get_log_gamma(ks + 1)
+
 
 @njit(cache=True)
 def get_log_gamma(ks):
     """
-    gamma(n) = (n-1)! for integer n. 
+    gamma(n) = (n-1)! for integer n.
     """
     result = np.zeros(len(ks), dtype=float)
 
     for ii in range(len(ks)):
-        # NB expected to be integers                                                                                                                                                                                  
+        # NB expected to be integers
         kk = int(round(ks[ii]))
 
-        # TODO why are these occurring?                                                                                                                                                                               
+        # TODO why are these occurring?
         if kk < 0:
             result[ii] = np.inf
         elif kk >= __max_gamma:
@@ -47,6 +49,7 @@ def get_log_gamma(ks):
             result[ii] = __log_gamma_table[kk]
 
     return result
+
 
 @njit(cache=True)
 def get_log_negbinomial(nn, pp, kk, log_factorial_kk=None):
@@ -59,6 +62,7 @@ def get_log_negbinomial(nn, pp, kk, log_factorial_kk=None):
     result -= get_log_gamma(nn)
 
     return result
+
 
 @njit(cache=True)
 def get_log_betabinomial(
@@ -87,6 +91,7 @@ def get_log_betabinomial(
 
     return result
 
+
 @njit(cache=True, parallel=True)
 def compute_emission_probability_nb_betabinom_mix_v1(
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
@@ -99,14 +104,14 @@ def compute_emission_probability_nb_betabinom_mix_v1(
 
     # TODO HACK
     # spots_to_process = range(n_states)
-    spots_to_process = np.where(np.sum(base_nb_mean + total_bb_RD, axis=0) > 0.)[0]
-    
+    spots_to_process = np.where(np.sum(base_nb_mean + total_bb_RD, axis=0) > 0.0)[0]
+
     for ii in prange(n_states):
         for s in spots_to_process:
             # NB expression from NB distribution,
             #    see https://en.wikipedia.org/wiki/Negative_binomial_distribution
-            idx_nonzero_rdr = np.where(base_nb_mean[:,s] > 0.)[0]            
-            idx_nonzero_baf = np.where(total_bb_RD[:, s] > 0.)[0]
+            idx_nonzero_rdr = np.where(base_nb_mean[:, s] > 0.0)[0]
+            idx_nonzero_baf = np.where(total_bb_RD[:, s] > 0.0)[0]
 
             if len(idx_nonzero_rdr) > 0:
                 # nb_mean = base_nb_mean[idx_nonzero_rdr,s] * (tumor_prop[s] * np.exp(log_mu[i, s]) + 1 - tumor_prop[s])
@@ -123,14 +128,16 @@ def compute_emission_probability_nb_betabinom_mix_v1(
                 kk = X[idx_nonzero_rdr, 0, s]
 
                 # nn, kk = np.round(nn), np.round(kk)
-                
+
                 # DEPRECATE
                 # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
 
                 log_factor_kk = get_log_factorial(kk)
-                log_emission_rdr[ii, idx_nonzero_rdr, s] = get_log_negbinomial(nn, pp, kk, log_factorial_kk=log_factor_kk)
-            
-            # AF from BetaBinom distribution 
+                log_emission_rdr[ii, idx_nonzero_rdr, s] = get_log_negbinomial(
+                    nn, pp, kk, log_factorial_kk=log_factor_kk
+                )
+
+            # AF from BetaBinom distribution
             if len(idx_nonzero_baf) > 0:
                 this_weighted_tp = tumor_prop[idx_nonzero_baf, s]
 
@@ -171,16 +178,20 @@ def compute_emission_probability_nb_betabinom_mix_v1(
                     mix_p_B * taus[ii, s],
                 )
 
-                # kk, nn, aa, bb = np.round(kk), np.round(nn), np.round(aa), np.round(bb) 
-                
+                # kk, nn, aa, bb = np.round(kk), np.round(nn), np.round(aa), np.round(bb)
+
                 # DEPRECATE
                 # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
-                
+
                 log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(
-                    nn, kk, aa, bb,
+                    nn,
+                    kk,
+                    aa,
+                    bb,
                 )
 
     return log_emission_rdr, log_emission_baf
+
 
 @njit(cache=True, parallel=True)
 def compute_emission_probability_nb_betabinom_mix(
@@ -204,7 +215,7 @@ def compute_emission_probability_nb_betabinom_mix(
             #    see https://en.wikipedia.org/wiki/Negative_binomial_distribution
             kk = X[idx_nonzero_rdr, 0, s]
             log_factorial_kk = get_log_factorial(kk)
-            
+
             for ii in range(n_states):
                 nb_mean = base_nb_mean[idx_nonzero_rdr, s]
                 nb_mean *= (
@@ -281,14 +292,14 @@ def compute_emission_probability_nb_betabinom_mix(
 
                 # DEPRECATE
                 # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
-                
+
                 # interim = (
                 #     log_gamma_nn
                 #     + get_log_gamma(kk + aa)
                 #     + get_log_gamma(nn - kk + bb)
                 #     + get_log_gamma(aa + bb)
-                # ) 
-                # 
+                # )
+                #
                 # interim -= (
                 #     log_gamma_kk
                 #    + log_gamma_nn_kk
@@ -297,6 +308,14 @@ def compute_emission_probability_nb_betabinom_mix(
                 #    + get_log_gamma(bb)
                 # )
 
-                log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(nn, kk, aa, bb)
+                log_emission_baf[ii, idx_nonzero_baf, s] += get_log_betabinomial(
+                    nn,
+                    kk,
+                    aa,
+                    bb,
+                    log_gamma_nn=log_gamma_nn,
+                    log_gamma_kk=log_gamma_kk,
+                    log_gamma_nn_kk=log_gamma_nn_kk,
+                )
 
     return log_emission_rdr, log_emission_baf
