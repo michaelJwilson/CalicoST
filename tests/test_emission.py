@@ -31,10 +31,10 @@ def test_negbinomial():
 
 def test_betabinomial():
     kk, nn, aa, bb = (
-        np.array([10, 20, 1., 1.]),
-        np.array([30, 40, 1., 1.]),
-        np.array([10, 20, 0.3475, 3_475.]),
-        np.array([50, 60, 0.3277, 3_277.]),
+        np.array([10, 20]),
+        np.array([30, 40]),
+        np.array([10, 20]),
+        np.array([50, 60]),
     )
 
     # NB returns -inf for non-integer k and nan for non-integer n.
@@ -44,9 +44,19 @@ def test_betabinomial():
         nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
     )
 
-    # assert_allclose(exp, result)
+    assert_allclose(exp, result)
 
-    print()
-    print(exp)
-    print(result)
-    
+    # TODO BUG? pseudo-counts < 1. 
+    kk, nn, aa, bb = (
+        np.array([1., 1.]),
+        np.array([1., 1.]),
+        np.array([0.3475, 3_475.]),
+        np.array([0.3277, 3_277.]),
+    )
+
+    exp = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+    result = get_log_betabinomial(
+        nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
+    )
+
+    assert_allclose(exp, result)    
