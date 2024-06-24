@@ -279,14 +279,14 @@ if __name__ == "__main__":
     truth_log_emission_rdr = np.load("log_emission_rdr.npy")
     truth_log_emission_baf = np.load("log_emission_baf.npy")
 
-    # pl.loglog(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
-    # pl.xlabel("Original -log(RDR)")
-    # pl.ylabel("New -log(RDR)")
-    # pl.show()
+    pl.plot(-truth_log_emission_rdr.ravel(), -log_emission_rdr.ravel(), marker=',', lw=0.0, c='k')
+    pl.xlabel("Original -log(RDR)")
+    pl.ylabel("New -log(RDR)")
+    pl.show()
 
-    pl.plot(truth_log_emission_baf.ravel(), log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
-    pl.xlabel("Original BAF")
-    pl.ylabel("New BAF")
+    pl.plot(-truth_log_emission_baf.ravel(), -log_emission_baf.ravel(), marker=',', lw=0.0, c='k')
+    pl.xlabel("Original -log(BAF)")
+    pl.ylabel("New -log(BAF)")
     pl.show()
     
     """
