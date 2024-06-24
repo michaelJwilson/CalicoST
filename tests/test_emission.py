@@ -31,10 +31,10 @@ def test_negbinomial():
 
 def test_betabinomial():
     kk, nn, aa, bb = (
-        np.array([10, 20, 1.]),
-        np.array([30, 40, 1.]),
-        np.array([10, 20, 0.3475]),
-        np.array([50, 60, 0.3277]),
+        np.array([10, 20, 1., 1.]),
+        np.array([30, 40, 1., 1.]),
+        np.array([10, 20, 0.3475, 3_475.]),
+        np.array([50, 60, 0.3277, 3_277.]),
     )
 
     # NB returns -inf for non-integer k and nan for non-integer n.
@@ -45,7 +45,8 @@ def test_betabinomial():
     )
 
     # assert_allclose(exp, result)
-    
+
+    print()
     print(exp)
     print(result)
     

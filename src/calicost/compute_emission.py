@@ -3,7 +3,7 @@ import scipy
 from scipy.special import loggamma
 from numba import njit, prange
 
-__max_gamma = 1_000
+__max_gamma = 10_000
 __log_gamma_table = loggamma(np.arange(__max_gamma))
 
 
