@@ -94,9 +94,9 @@ def get_log_betabinomial(
 
     return result
 
-
+# TODO DEPRECATE
 @njit(cache=True, parallel=True)
-def compute_emission_probability_nb_betabinom_mix(
+def compute_emission_probability_nb_betabinom_mix_v1(
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
 ):
     n_states = log_mu.shape[0]
@@ -194,8 +194,8 @@ def compute_emission_probability_nb_betabinom_mix(
     return log_emission_rdr, log_emission_baf
 
 
-# @njit(cache=True, parallel=True)
-def compute_emission_probability_nb_betabinom_mix_v2(
+@njit(cache=True, parallel=True)
+def compute_emission_probability_nb_betabinom_mix(
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
 ):
     n_states = log_mu.shape[0]

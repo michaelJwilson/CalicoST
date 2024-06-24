@@ -1,18 +1,20 @@
-import logging
-import numpy as np
-from numba import njit
-from scipy.stats import norm, multivariate_normal, poisson
-import scipy.special
-from scipy.optimize import minimize
-from scipy.optimize import Bounds
-from sklearn.mixture import GaussianMixture
-from tqdm import trange
-import statsmodels.api as sm
-from statsmodels.base.model import GenericLikelihoodModel
 import copy
+import logging
+
+import networkx as nx
+import numpy as np
+import scipy.special
+import statsmodels.api as sm
+from numba import njit
+from scipy.optimize import Bounds, minimize
+from scipy.stats import multivariate_normal, norm, poisson
+from sklearn.mixture import GaussianMixture
+from statsmodels.base.model import GenericLikelihoodModel
+from tqdm import trange
+
 from calicost.utils_distribution_fitting import *
 from calicost.utils_hmm import *
-import networkx as nx
+from calicost.compute_emission import compute_emission_probability_nb_betabinom_mix
 
 """
 Joint NB-BB HMM that accounts for tumor/normal genome proportions. Tumor genome proportion is weighted by mu in BB distribution.
@@ -120,6 +122,11 @@ class hmm_nophasing_v2(object):
         log_emission : array, shape (n_states, n_obs, n_spots)
             Log emission probability for each gene each spot (or sample) under each state. There is a common bag of states across all spots.
         """
+
+        return compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs)
+
+        # TODO DEPRECATE
+        """
         n_obs = X.shape[0]
         n_comp = X.shape[1]
         n_spots = X.shape[2]
@@ -153,7 +160,8 @@ class hmm_nophasing_v2(object):
                     mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
         return log_emission_rdr, log_emission_baf
-    #
+        """
+    
     @staticmethod
     @njit 
     def forward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
