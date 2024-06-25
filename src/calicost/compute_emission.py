@@ -120,12 +120,16 @@ def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, t
     
     kk = np.tile(X[:, 1, :], (n_states, 1, 1))
     nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
-    
+
+    # NB (states, spots)
     aa = (p_binom * taus)
     bb = (1. - p_binom) * taus
 
+    aa = np.tile(aa[:, None, :], (1, n_obs, 1))
+    bb = np.tile(bb[:, None, :], (1, n_obs, 1))
+    
     idx  = np.where(nn > 0.)    
-    log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk[idx], nn[idx], aa[idx[0], None, idx[1]], bb[idx[0], None, idx[1]])
+    log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk[idx], nn[idx], aa[idx], bb[idx])
 
     return log_emission_rdr, log_emission_baf
     
