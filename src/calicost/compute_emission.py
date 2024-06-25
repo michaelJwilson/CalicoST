@@ -4,7 +4,7 @@ from scipy.special import loggamma
 from numba import njit, prange
 from numpy.testing import assert_allclose
 
-__max_gamma = 10_000
+__max_gamma = 100_000
 __log_gamma_table = loggamma(np.arange(__max_gamma))
 
 
@@ -31,7 +31,7 @@ def get_log_factorial(ks):
 
 
 @njit(cache=True)
-def get_log_gamma(ks, stirling=True):
+def get_log_gamma(ks):
     """
     gamma(n) = (n-1)! for integer n.
     """
@@ -45,10 +45,7 @@ def get_log_gamma(ks, stirling=True):
         if kk < 0:
             result[ii] = np.inf
         elif kk >= __max_gamma:
-            if stirling:
-                result[ii] = (kk - 1) * np.log(kk) - kk
-            else:
-                result[ii] = np.inf
+            result[ii] = (kk - 1) * np.log(kk) - kk
         else:
             result[ii] = __log_gamma_table[kk]
 
@@ -132,8 +129,8 @@ def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, t
             kk = X[idx_nonzero_baf, 1, s]
             nn = total_bb_RD[idx_nonzero_baf, s]
 
-            log_gamma_nn = get_log_gamma(nn + 1)
             log_gamma_kk = get_log_gamma(kk + 1)
+            log_gamma_nn = get_log_gamma(nn + 1)
             log_gamma_nn_kk = get_log_gamma(nn - kk + 1)
 
             for i in np.arange(n_states):
@@ -156,13 +153,15 @@ def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, t
                 ) 
                 
                 log_emission_baf[i, idx_nonzero_baf, s] = result
+                
                 """
                 try:
                     assert_allclose(exp, result, atol=5.e-2, rtol=1.e-2)
                 except Exception as E:
                     print(f"\n\n{E}\n{nn}\n{kk}\n{p_binom[i, s]}\n{taus[i, s]}\n{aa}\n{bb}")
                     exit(0)
-                """ 
+                """
+                
     return log_emission_rdr, log_emission_baf
     
 # TODO DEPRECATE
