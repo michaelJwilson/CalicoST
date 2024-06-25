@@ -98,8 +98,39 @@ def get_log_betabinomial(
 
     return result
 
-@njit(cache=True, parallel=True)
 def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
+    n_states = log_mu.shape[0]
+    (n_obs, n_comp, n_spots) = X.shape
+    
+    # NB (n_states, n_obs, n_spots) == (7, 4248, 1)
+    log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
+    
+    # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)
+    nb_mean = np.exp(log_mu[:, None, :]) * base_nb_mean[None, :, :]
+    nb_std = np.sqrt(nb_mean + alphas[:, None, :] * nb_mean**2)
+
+    kk = np.tile(X[:, 0, :], (n_states, 1, 1))
+    nn, pp = convert_params(nb_mean, nb_std)
+    
+    idx = np.where(nb_mean > 0.)
+    log_emission_rdr[idx] = scipy.stats.nbinom.logpmf(kk, nn, pp)[idx]
+
+    # NB BAF
+    log_emission_baf = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
+    
+    kk = np.tile(X[:, 1, :], (n_states, 1, 1))
+    nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
+    
+    aa = (p_binom * taus)
+    bb = (1. - p_binom) * taus
+
+    idx = np.where(nn > 0.)    
+    log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk, nn, aa[:, None, :], bb[:, None, :])[idx]
+
+    return log_emission_rdr, log_emission_baf
+    
+@njit(cache=True, parallel=True)
+def compute_emission_probability_nb_betabinom_numba(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
     n_states = log_mu.shape[0]
     (n_obs, n_comp, n_spots) = X.shape
 
