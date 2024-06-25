@@ -68,7 +68,7 @@ def get_log_betabinomial(
     nn, kk, aa, bb, log_gamma_nn=None, log_gamma_kk=None, log_gamma_nn_kk=None
 ):
     nn, kk = np.round(nn), np.round(kk)
-    aa, bb = np.round(aa), np.round(bb)
+    aa, bb = np.ceil(aa), np.ceil(bb)
     
     if log_gamma_nn is None:
         log_gamma_nn = get_log_gamma(nn + 1)
