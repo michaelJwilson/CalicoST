@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 from scipy.special import loggamma
 from numba import njit, prange
+from numpy.testing import assert_allclose
 
 __max_gamma = 10_000
 __log_gamma_table = loggamma(np.arange(__max_gamma))
@@ -30,7 +31,10 @@ def get_log_factorial(ks):
 
 
 @njit(cache=True)
-def get_log_gamma(ks):
+def get_log_gamma(ks, stirling=True):
+    """
+    gamma(n) = (n-1)! for integer n.
+    """
     result = np.zeros(len(ks), dtype=float)
 
     for ii in range(len(ks)):
@@ -41,7 +45,10 @@ def get_log_gamma(ks):
         if kk < 0:
             result[ii] = np.inf
         elif kk >= __max_gamma:
-            result[ii] = np.inf
+            if stirling:
+                result[ii] = (kk - 1) * np.log(kk) - kk
+            else:
+                result[ii] = np.inf
         else:
             result[ii] = __log_gamma_table[kk]
 
@@ -94,6 +101,70 @@ def get_log_betabinomial(
 
     return result
 
+@njit(cache=True, parallel=True)
+def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
+    n_states = log_mu.shape[0]
+    (n_obs, n_comp, n_spots) = X.shape
+
+    log_emission_rdr = np.zeros((n_states, n_obs, n_spots), dtype=float)
+    log_emission_baf = np.zeros((n_states, n_obs, n_spots), dtype=float)
+    
+    for s in prange(n_spots):
+        idx_nonzero_rdr = np.where(base_nb_mean[:,s] > 0)[0]
+        idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
+
+        if len(idx_nonzero_rdr) > 0:
+            kk = X[idx_nonzero_rdr, 0, s]
+            log_factorial_kk = get_log_factorial(kk)
+            
+            for i in np.arange(n_states):
+                nb_mean = base_nb_mean[idx_nonzero_rdr,s] * np.exp(log_mu[i, s])
+                nb_std = np.sqrt(nb_mean + alphas[i, s] * nb_mean**2)
+
+                nn, pp = convert_params(nb_mean, nb_std)
+
+                # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(kk, nn, pp)
+                log_emission_rdr[i, idx_nonzero_rdr, s] = get_log_negbinomial(
+                    nn, pp, kk, log_factorial_kk=log_factorial_kk
+                )
+                
+        if len(idx_nonzero_baf) > 0:
+            kk = X[idx_nonzero_baf, 1, s]
+            nn = total_bb_RD[idx_nonzero_baf, s]
+
+            log_gamma_nn = get_log_gamma(nn + 1)
+            log_gamma_kk = get_log_gamma(kk + 1)
+            log_gamma_nn_kk = get_log_gamma(nn - kk + 1)
+
+            for i in np.arange(n_states):
+                aa = p_binom[i, s] * taus[i, s] * np.ones(len(kk))
+                bb = (1. - p_binom[i, s]) * taus[i, s] * np.ones(len(kk))
+
+                # DEPRECATE
+                # log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+
+                # TODO BUG? very large pseudo-counts.
+                # exp = scipy.stats.betabinom.logpmf(kk, nn, aa, bb)
+                result = get_log_betabinomial(                                                                                                                
+                    nn,                                                                                                                                                                       
+                    kk,                                                                                                                                                                       
+                    aa,                                                                                                                                                                       
+                    bb,                                                                                                                                                                       
+                    log_gamma_nn=log_gamma_nn,                                                                                                                                                
+                    log_gamma_kk=log_gamma_kk,
+                    log_gamma_nn_kk=log_gamma_nn_kk,                                                                                                                                          
+                ) 
+                
+                log_emission_baf[i, idx_nonzero_baf, s] = result
+                """
+                try:
+                    assert_allclose(exp, result, atol=5.e-2, rtol=1.e-2)
+                except Exception as E:
+                    print(f"\n\n{E}\n{nn}\n{kk}\n{p_binom[i, s]}\n{taus[i, s]}\n{aa}\n{bb}")
+                    exit(0)
+                """ 
+    return log_emission_rdr, log_emission_baf
+    
 # TODO DEPRECATE
 @njit(cache=True, parallel=True)
 def compute_emission_probability_nb_betabinom_mix_v1(
