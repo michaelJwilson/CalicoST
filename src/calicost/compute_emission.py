@@ -113,7 +113,7 @@ def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, t
     nn, pp = convert_params(nb_mean, nb_std)
     
     idx = np.where(nb_mean > 0.)
-    log_emission_rdr[idx] = scipy.stats.nbinom.logpmf(kk, nn, pp)[idx]
+    log_emission_rdr[idx] = scipy.stats.nbinom.logpmf(kk[idx], nn[idx], pp[idx])
 
     # NB BAF
     log_emission_baf = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
@@ -124,8 +124,8 @@ def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, t
     aa = (p_binom * taus)
     bb = (1. - p_binom) * taus
 
-    idx = np.where(nn > 0.)    
-    log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk, nn, aa[:, None, :], bb[:, None, :])[idx]
+    idx  = np.where(nn > 0.)    
+    log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk[idx], nn[idx], aa[idx[0], None, idx[1]], bb[idx[0], None, idx[1]])
 
     return log_emission_rdr, log_emission_baf
     
