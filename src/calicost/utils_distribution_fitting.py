@@ -3,6 +3,7 @@ import inspect
 import logging
 
 import numpy as np
+import pylab as pl
 import scipy
 from scipy import linalg, special
 from scipy.special import logsumexp, loggamma
@@ -15,6 +16,9 @@ import statsmodels
 import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
 import os
+import jax
+from jax.scipy.optimize import minimize as jminimize
+from jax.scipy.optimize import OptimizeResults
 
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -35,7 +39,18 @@ def convert_params(mean, std, round_counts=False):
     
     return n, p
 
-
+class JaxGenericLikelihoodModel(OptimizeResults):
+    def __new__(cls, base):
+        return super().__new__(cls, *base)
+        
+    @property
+    def params(self):
+        return self.x
+    
+    @params.setter
+    def params(self, value):
+        self.x = value
+    
 class Weighted_NegativeBinomial(GenericLikelihoodModel):
     """
     Negative Binomial model endog ~ NB(exposure * exp(exog @ params[:-1]), params[-1]), where exog is the design matrix, and params[-1] is 1 / overdispersion.
@@ -61,17 +76,20 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         self.weights = weights
         self.exposure = exposure
         self.seed = seed
-
+        self.jaxify = True
+        
     def nloglikeobs(self, params):
-        nb_mean = np.exp(self.exog @ params[:-1]) * self.exposure
-        nb_std = np.sqrt(nb_mean + params[-1] * nb_mean**2)
+        if self.jaxify:
+            return self.nloglikeobs_jax(params)
+        
+        mean = self.exog @ np.exp(params[:-1]) * self.exposure
+        std = np.sqrt(mean + params[-1] * mean**2)
 
-        n, p = convert_params(nb_mean, nb_std)
-
-        llf = scipy.stats.nbinom.logpmf(self.endog, n, p)
-
+        nn, pp = convert_params(mean, std)        
+        llf = scipy.stats.nbinom.logpmf(self.endog, nn, pp)
+        
         return -llf.dot(self.weights)
-
+        
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append('alpha')
         
@@ -81,10 +99,25 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
             else:
                 start_params = np.append(0.1 * np.ones(self.nparams), 1.e-2)
 
-        return super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
-                                                          maxiter=maxiter, maxfun=maxfun,
-                                                          **kwds)
+        if self.jaxify:
+            result = jminimize(self.nloglikeobs_jax, x0=start_params, method="BFGS", options={"maxiter": maxiter})
+            result = JaxGenericLikelihoodModel(result)
+        else:
+            result = super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
+                                                                maxiter=maxiter,
+                                                                maxfun=maxfun,
+                                                                **kwds)
+        return result
 
+    def nloglikeobs_jax(self, params):
+        mean = self.exog @ jax.numpy.exp(params[:-1]) * self.exposure
+        std = jax.numpy.sqrt(mean + params[-1] * mean**2)
+
+        nn, pp = convert_params(mean, std)
+        llf = jax.scipy.stats.nbinom.logpmf(self.endog, nn, pp)
+        
+        return -llf.dot(self.weights)
+    
 class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, weights, exposure, tumor_prop, seed=0, **kwds):
         super(Weighted_NegativeBinomial_mix, self).__init__(endog, exog, **kwds)
@@ -138,6 +171,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
     """
     def __init__(self, endog, exog, weights, exposure, **kwds):
         super(Weighted_BetaBinom, self).__init__(endog, exog, **kwds)
+        
         self.weights = weights
         self.exposure = exposure
 
@@ -151,6 +185,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
 
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append("tau")
+        
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
@@ -158,7 +193,8 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
                 
         return super(Weighted_BetaBinom, self).fit(start_params=start_params,
-                                                   maxiter=maxiter, maxfun=maxfun,
+                                                   maxiter=maxiter,
+                                                   maxfun=maxfun,
                                                    **kwds)
 
 
@@ -168,14 +204,14 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         self.weights = weights
         self.exposure = exposure
         self.tumor_prop = tumor_prop
-    #
+    
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
         b = ((1 - self.exog @ params[:-1]) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
         llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
         neg_sum_llf = -llf.dot(self.weights)
         return neg_sum_llf
-    #
+    
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append("tau")
         if start_params is None:
@@ -194,14 +230,14 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
         self.tau = tau
         self.weights = weights
         self.exposure = exposure
-    #
+    
     def nloglikeobs(self, params):
         a = (self.exog @ params) * self.tau
         b = (1 - self.exog @ params) * self.tau
         llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
         neg_sum_llf = -llf.dot(self.weights)
         return neg_sum_llf
-    #
+    
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -221,14 +257,14 @@ class Weighted_BetaBinom_fixdispersion_mix(GenericLikelihoodModel):
         self.weights = weights
         self.exposure = exposure
         self.tumor_prop = tumor_prop
-    #
+    
     def nloglikeobs(self, params):
         a = (self.exog @ params * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau
         b = ((1 - self.exog @ params) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau
         llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
         neg_sum_llf = -llf.dot(self.weights)
         return neg_sum_llf
-    #
+    
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -266,14 +302,14 @@ class BAF_Binom(GenericLikelihoodModel):
         self.exposure = exposure
         self.offset = offset
         self.scaling = scaling
-    #
+    
     def nloglikeobs(self, params):
         linear_term = self.exog @ params
         p = self.scaling / (1 + np.exp(-linear_term + self.offset))
         llf = scipy.stats.binom.logpmf(self.endog, self.exposure, p)
         neg_sum_llf = -llf.dot(self.weights)
         return neg_sum_llf
-    #
+    
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         if start_params is None:
             if hasattr(self, 'start_params'):
