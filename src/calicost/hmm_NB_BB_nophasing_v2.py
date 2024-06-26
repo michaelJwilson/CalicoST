@@ -35,8 +35,9 @@ class hmm_nophasing_v2(object):
         """
         self.params = params
         self.t = t
-    #
+
     @staticmethod
+    @profile
     def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
         """
         Attributes
@@ -67,29 +68,56 @@ class hmm_nophasing_v2(object):
         log_emission : array, shape (n_states, n_obs, n_spots)
             Log emission probability for each gene each spot (or sample) under each state. There is a common bag of states across all spots.
         """
-        n_obs = X.shape[0]
-        n_comp = X.shape[1]
-        n_spots = X.shape[2]
         n_states = log_mu.shape[0]
-        # initialize log_emission
-        log_emission_rdr = np.zeros((n_states, n_obs, n_spots))
-        log_emission_baf = np.zeros((n_states, n_obs, n_spots))
+
+        # NB n_comp categorises read-depth, b allele frequency.
+        n_obs, n_comp, n_spots = X.shape
+
+        log_emission_rdr = np.zeros((n_states, n_obs, n_spots), dtype=float)
+        log_emission_baf = np.zeros((n_states, n_obs, n_spots), dtype=float)
+        
         for i in np.arange(n_states):
             for s in np.arange(n_spots):
                 # expression from NB distribution
                 idx_nonzero_rdr = np.where(base_nb_mean[:,s] > 0)[0]
+                
                 if len(idx_nonzero_rdr) > 0:
-                    nb_mean = base_nb_mean[idx_nonzero_rdr,s] * np.exp(log_mu[i, s])
-                    nb_std = np.sqrt(nb_mean + alphas[i, s] * nb_mean**2)
-                    n, p = convert_params(nb_mean, nb_std)
-                    log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
+                    mean = base_nb_mean[idx_nonzero_rdr,s] * np.exp(log_mu[i, s])
+                    std = np.sqrt(mean + alphas[i, s] * mean**2)
+                    
+                    r, p = convert_params(mean, std)
+
+                    # NB asymptotic limit for large counts
+                    poisson_like = np.where(r > 10_000)[0]
+                    nonzero_poisson_like = idx_nonzero_rdr[poisson_like]
+                    
+                    log_emission_rdr[i, nonzero_poisson_like, s] = scipy.stats.poisson.logpmf(X[nonzero_poisson_like, 0, s], mean[poisson_like])
+                    log_emission_rdr[i, ~nonzero_poisson_like, s] = scipy.stats.nbinom.logpmf(X[~nonzero_poisson_like, 0, s], r[poisson_like], p[poisson_like])
+                    
                 # AF from BetaBinom distribution
                 idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
+                
                 if len(idx_nonzero_baf) > 0:
-                    log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
+                    total_pseudo = taus[i, s]
+                    
+                    alpha = p_binom[i, s] * total_pseudo
+                    beta = (1. - p_binom[i, s]) * total_pseudo
+
+                    # NB asymptotic limit for large pseudo-counts
+                    if total_pseudo > 100_000:
+                        # NB see https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.binom.html
+                        log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.binom.logpmf(
+                            X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], alpha /	(alpha + beta)
+                        )
+                    else:
+                        log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(
+                            X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], alpha, beta
+                        )
+                    
         return log_emission_rdr, log_emission_baf
-    #
+    
     @staticmethod
+    @profile
     def compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
         """
         Attributes
@@ -153,7 +181,7 @@ class hmm_nophasing_v2(object):
                     mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
         return log_emission_rdr, log_emission_baf
-    #
+    
     @staticmethod
     @njit 
     def forward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
@@ -187,7 +215,7 @@ class hmm_nophasing_v2(object):
                     log_alpha[j, (cumlen + t)] = mylogsumexp(buf) + np.sum(log_emission[j, (cumlen + t), :])
             cumlen += le
         return log_alpha
-    #
+    
     @staticmethod
     @njit 
     def backward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
@@ -223,7 +251,7 @@ class hmm_nophasing_v2(object):
             cumlen += le
         return log_beta
 
-    #
+    @profile
     def run_baum_welch_nb_bb(self, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat=None, tumor_prop=None, \
         fix_NB_dispersion=False, shared_NB_dispersion=False, fix_BB_dispersion=False, shared_BB_dispersion=False, \
         is_diag=False, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None, max_iter=100, tol=1e-4, **kwargs):
