@@ -135,21 +135,15 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         self.exposure = exposure
     
     def nloglikeobs(self, params, binomial_limit=100_000):
-        s = params[-1]
-        a = (self.exog @ params[:-1])
-        b = (1. - self.exog @ params[:-1]) * s        
+        a = (self.exog @ params[:-1]) * params[-1]
+        b = (1. - self.exog @ params[:-1]) * params[-1]    
 
-        if s > binomial_limit:
-            llf = scipy.stats.binom.logpmf(
-                self.endog, self.exposure, a / (a + b)
-            )
-        else:
-            llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
+        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
 
         return -llf.dot(self.weights)
     
     @profile
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+    def fit(self, start_params=None, maxiter=10000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")
         
         if start_params is None:
@@ -159,8 +153,9 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
                 
         return super(Weighted_BetaBinom, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwds)
+                                                   maxiter=maxiter,
+                                                   maxfun=maxfun,
+                                                   **kwds)
 
 
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
