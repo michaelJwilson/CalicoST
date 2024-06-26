@@ -28,7 +28,18 @@ def convert_params(mean, std):
     See https://mathworld.wolfram.com/NegativeBinomialDistribution.html
     """
     p = mean/std**2
-    n = mean*p/(1.0 - p)
+    n = mean * p / (1.0 - p)
+    
+    return n, p
+
+def convert_params_var(mean, var):
+    """                                                                                                                                                                                                               
+    Convert mean/dispersion parameterization of a negative binomial to the ones scipy supports                                                                                                                                                                                                                                                                                                                                             
+    See https://mathworld.wolfram.com/NegativeBinomialDistribution.html                                                                                                                                               
+    """
+    p = mean / var
+    n = mean * p / (1. - p)
+
     return n, p
 
 
@@ -56,30 +67,50 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         
         self.weights = weights
         self.exposure = exposure
+        self.log_exposure = np.log(exposure)
         self.seed = seed
 
     def nloglikeobs(self, params):
-        nb_mean = np.exp(self.exog @ params[:-1]) * self.exposure
-        nb_std = np.sqrt(nb_mean + params[-1] * nb_mean**2)
-        
-        n, p = convert_params(nb_mean, nb_std)
+        log_mean = self.exog @ params[:-1] + self.log_exposure
+        mean = np.exp(log_mean)
+
+        var = mean + params[-1] * mean**2.        
+        n, p = convert_params_var(mean, var)
         
         llf = scipy.stats.nbinom.logpmf(self.endog, n, p)
         
         return -llf.dot(self.weights)
 
     @profile
-    def fit(self, start_params=None, maxiter=15_000, maxfun=5_000, **kwds):
+    def fit(self, start_params=None, maxiter=15_000, maxfun=5_000, verbose=False, **kwargs):
         self.exog_names.append('alpha')
+        
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
-                start_params = np.append(0.1 * np.ones(self.nparams), 0.01)
+                start_phi = 0.2 # 1.e-2
+                start_params = np.append(0.1 * np.ones(self.nparams), start_phi)
+                
+        def callback(params):
+            print(f"Weighted_NegativeBinomial fit: {params}")
 
-        return super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwds)
+        kwargs.pop("disp")
+            
+        result = super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
+                                                          maxiter=maxiter,
+                                                          maxfun=maxfun,
+                                                          disp=False,
+                                                          skip_hessian=True,
+                                                          callback=None,
+                                                          full_output=True,
+                                                          retall=True,
+                                                          **kwargs)
+        if verbose:
+            print(result.summary())
+            print(result.mle_retvals)
+            
+        return result
 
 
 class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
