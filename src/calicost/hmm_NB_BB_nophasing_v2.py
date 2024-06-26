@@ -38,7 +38,7 @@ class hmm_nophasing_v2(object):
 
     @staticmethod
     @profile
-    def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, poisson_limit=1_000, binomial_limit=10_000):
+    def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
         n_states = log_mu.shape[0]
         (n_obs, n_comp, n_spots) = X.shape
 
@@ -52,33 +52,23 @@ class hmm_nophasing_v2(object):
         kk = np.tile(X[:, 0, :], (n_states, 1, 1))
         nn, pp = convert_params(nb_mean, nb_std)
 
-        idx = np.where(nn > poisson_limit)
-        log_emission_rdr[idx] = scipy.stats.poisson.logpmf(kk[idx], nb_mean[idx])
-
-        idx = np.where((nb_mean > 0.) & (nn < poisson_limit))
+        idx = np.where((nb_mean > 0.))
         log_emission_rdr[idx] = scipy.stats.nbinom.logpmf(kk[idx], nn[idx], pp[idx])
 
-        # NB BAF                                                                                                                                                                                                      
+        # NB BAF                                                                                                                                                                                                     
         log_emission_baf = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
 
         kk = np.tile(X[:, 1, :], (n_states, 1, 1))
         nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
 
-        # NB (states, spots)                                                                                                                                                                                          
-        aa = p_binom
-        bb = (1. - p_binom)
+        # NB (states, spots)                                                                                                                                                                                         
+        aa = p_binom * taus
+        bb = (1. - p_binom) * taus
 
-        taus = np.tile(taus[:, None, :], (1, n_obs, 1))
+        aa = np.tile(aa[:, None, :], (1, n_obs, 1))
+        bb = np.tile(bb[:, None, :], (1, n_obs, 1))
 
-        aa = np.tile(aa[:, None, :], (1, n_obs, 1)) * taus
-        bb = np.tile(bb[:, None, :], (1, n_obs, 1)) * taus
-
-        idx = np.where((nn > 0.) & (taus > binomial_limit))
-        log_emission_baf[idx] = scipy.stats.binom.logpmf(
-            kk[idx], nn[idx], aa[idx] / (aa[idx] + bb[idx])
-        )
-        
-        idx  = np.where((nn > 0.) & (taus < binomial_limit))
+        idx = np.where(nn > 0.)
         log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk[idx], nn[idx], aa[idx], bb[idx])
 
         return log_emission_rdr, log_emission_baf
@@ -298,7 +288,6 @@ class hmm_nophasing_v2(object):
             cumlen += le
         return log_beta
 
-    @profile
     def run_baum_welch_nb_bb(self, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat=None, tumor_prop=None, \
         fix_NB_dispersion=False, shared_NB_dispersion=False, fix_BB_dispersion=False, shared_BB_dispersion=False, \
         is_diag=False, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None, max_iter=100, tol=1e-4, **kwargs):
