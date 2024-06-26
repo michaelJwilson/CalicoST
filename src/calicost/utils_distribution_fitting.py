@@ -78,8 +78,8 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
                 start_params = np.append(0.1 * np.ones(self.nparams), 0.01)
 
         return super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwds)
+                                                          maxiter=maxiter, maxfun=maxfun, method="bfgs",
+                                                          **kwds)
 
 
 class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):

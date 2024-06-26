@@ -865,7 +865,7 @@ def update_transition_nophasing(log_xi, is_diag=False):
         np.fill_diagonal(log_transmat, t)
     return log_transmat
 
-
+@profile
 def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, alphas, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -1076,7 +1076,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, taus, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
