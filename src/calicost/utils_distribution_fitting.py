@@ -53,6 +53,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
     """
     def __init__(self, endog, exog, weights, exposure, seed=0, **kwds):
         super(Weighted_NegativeBinomial, self).__init__(endog, exog, **kwds)
+        
         self.weights = weights
         self.exposure = exposure
         self.seed = seed
@@ -68,7 +69,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         return -llf.dot(self.weights)
 
     @profile
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+    def fit(self, start_params=None, maxiter=15_000, maxfun=5_000, **kwds):
         self.exog_names.append('alpha')
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -98,7 +99,7 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
         return neg_sum_llf
 
     @profile
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append('alpha')
         if start_params is None:
             if hasattr(self, 'start_params'):
@@ -112,7 +113,7 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
 
 class Weighted_BetaBinom(GenericLikelihoodModel):
     """
-    Beta-binomial model endog ~ BetaBin(exposure, tau * p, tau * (1 - p)), where p = exog @ params[:-1] and tau = params[-1].
+    Beta-binomial model endog ~ BetaBin(exposure, tau * p, tau * (1. - p)), where p = exog @ params[:-1] and tau = params[-1].
     This function fits the BetaBin params when samples are weighted by weights: max_{params} \sum_{s} weights_s * log P(endog_s | exog_s; params)
 
     Attributes
@@ -127,37 +128,65 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         Sample weights.
 
     exposure : array, (n_samples,)
-        Total number of trials. In BAF case, this is the total number of SNP-covering UMIs.
+        Total number of trials.  In BAF case, this is the total number of SNP-covering UMIs.
     """
-    def __init__(self, endog, exog, weights, exposure, **kwds):
-        super(Weighted_BetaBinom, self).__init__(endog, exog, **kwds)
+    def __init__(self, endog, exog, weights, exposure, **kwargs):
+        super(Weighted_BetaBinom, self).__init__(endog, exog, **kwargs)
+        
         self.weights = weights
         self.exposure = exposure
     
-    def nloglikeobs(self, params, binomial_limit=100_000):
-        a = (self.exog @ params[:-1]) * params[-1]
-        b = (1. - self.exog @ params[:-1]) * params[-1]    
+    def nloglikeobs(self, params):
+        params = np.exp(params)
+        
+        aa = self.exog @ params[:-1] * params[-1]
+        bb = self.exog @ (1. - params[:-1]) * params[-1]
 
-        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
+        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, aa, bb)
 
         return -llf.dot(self.weights)
     
     @profile
-    def fit(self, start_params=None, maxiter=10000, maxfun=5_000, **kwds):
+    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, method="bfgs", verbose=False, **kwargs):
         self.exog_names.append("tau")
+
+        eff_coverage = np.average(self.exposure, weights=self.weights)
         
         if start_params is None:
-            if hasattr(self, 'start_params'):
-                start_params = self.start_params
+            if hasattr(self, "start_params"):
+                start_params = self.start_params                
             else:
-                start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
-                
-        return super(Weighted_BetaBinom, self).fit(start_params=start_params,
-                                                   maxiter=maxiter,
-                                                   maxfun=maxfun,
-                                                   **kwds)
+                # NB unity -> added variance propto coverage. 10. * eff_coverage -> 10% above Poisson.
+                start_tau = 1.
+                start_params = np.append(0.5 * np.ones(self.nparams), 10. * eff_coverage)
 
+        start_params = np.log(start_params)
+        
+        # NB see https://www.statsmodels.org/dev/_modules/statsmodels/base/model.html#LikelihoodModel
+        kwargs.pop("disp")
+        
+        def callback(params):
+            print(f"Weighted_BetaBinomial fit: {params}")
+        
+        result = super(Weighted_BetaBinom, self).fit(start_params=start_params,
+                                                     method=method,
+                                                     maxiter=maxiter,
+                                                     maxfun=maxfun,
+                                                     disp=False,
+                                                     skip_hessian=True,
+                                                     callback=None, 
+                                                     full_output=True,
+                                                     retall=True)
+        result.params = np.exp(result.params)
 
+        # TODO HACK
+        if verbose:
+            print(result.summary())
+            # print(result.mle_settings)
+            print(result.mle_retvals)
+        
+        return result
+        
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, weights, exposure, tumor_prop, **kwds):
         super(Weighted_BetaBinom_mix, self).__init__(endog, exog, **kwds)
