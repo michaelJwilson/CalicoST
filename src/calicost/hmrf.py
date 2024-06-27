@@ -27,7 +27,20 @@ from statsmodels.tools.sm_exceptions import ValueWarning
 ############################################################
 
 @profile
-def hmrf_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_RD, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
+def hmrf_reassignment_posterior(
+        single_X,
+        single_base_nb_mean,
+        single_total_bb_RD,
+        res,
+        smooth_mat,
+        adjacency_mat,
+        prev_assignment,
+        sample_ids,
+        log_persample_weights,
+        spatial_weight,
+        hmmclass=hmm_sitewise,
+        return_posterior=False
+):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
     n_clones = res["new_log_mu"].shape[1]
@@ -38,7 +51,7 @@ def hmrf_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_R
     single_llf = np.zeros((N, n_clones))
     posterior = np.zeros((N, n_clones))
 
-    for i in trange(N):
+    for i in trange(N, desc="hmrf_reassignment_posterior"):
         idx = smooth_mat[i,:].nonzero()[1]
 
         single_X_sum = np.sum(single_X[:,:,idx], axis=2, keepdims=True)
