@@ -882,9 +882,11 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
+    
     # initialization
     new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
+    
     # expression signal by NB distribution
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
@@ -924,6 +926,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
             weights = []
             features = []
             state_posweights = []
+            
             for s in range(n_spots):
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
@@ -941,20 +944,33 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
                 weights.append( this_weights[idx_row_posweight] )
                 features.append( this_features[idx_row_posweight, :][:, idx_state_posweight] )
                 state_posweights.append( idx_state_posweight )
+                
             exposure = np.concatenate(exposure)
             y = np.concatenate(y)
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
+            
             model = Weighted_NegativeBinomial(y, features, weights=weights, exposure=exposure)
             res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
-            for s,idx_state_posweight in enumerate(state_posweights):
+            
+            for s, idx_state_posweight in enumerate(state_posweights):
                 l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                 l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
+                
                 new_log_mu[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
+                
             if not (start_log_mu is None):
-                res2 = model.fit(disp=0, maxiter=1500, start_params=np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]]), xtol=1e-4, ftol=1e-4)
+                new_start_log_mu = np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]])
+                
+                res2 = model.fit(disp=0,
+                                 maxiter=1500,
+                                 start_params=new_start_log_mu,
+                                 xtol=1e-4,
+                                 ftol=1e-4)
+                
                 if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
                     for s,idx_state_posweight in enumerate(state_posweights):
                         l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
@@ -962,8 +978,10 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
                     if res2.params[-1] > 0:
                         new_alphas[:,:] = res2.params[-1]
+                        
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+    
     return new_log_mu, new_alphas
 
 @profile
