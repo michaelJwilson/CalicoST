@@ -70,8 +70,11 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         self.log_exposure = np.log(exposure)
         self.seed = seed
 
-    def nloglikeobs(self, params):
-        log_mean = self.exog @ params[:-1] + self.log_exposure
+    def nloglikeobs(self, params, min_log_rdr=-2, max_log_rdr=2):
+        clip_params = params.copy()
+        clip_params[:-1] = np.clip(clip_params[:-1], a_min=min_log_rdr, a_max=max_log_rdr)
+        
+        log_mean = self.exog @ clip_params[:-1] + self.log_exposure
         mean = np.exp(log_mean)
 
         var = mean + params[-1] * mean**2.        
@@ -82,7 +85,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         return -llf.dot(self.weights)
 
     @profile
-    def fit(self, start_params=None, maxiter=15_000, maxfun=5_000, verbose=False, **kwargs):
+    def fit(self, start_params=None, maxiter=15_000, maxfun=5_000, verbose=False, method="bfgs", **kwargs):
         self.exog_names.append('alpha')
         
         if start_params is None:
@@ -98,16 +101,17 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         kwargs.pop("disp")
             
         result = super(Weighted_NegativeBinomial, self).fit(start_params=start_params,
-                                                          maxiter=maxiter,
-                                                          maxfun=maxfun,
-                                                          disp=False,
-                                                          skip_hessian=True,
-                                                          callback=None,
-                                                          full_output=True,
-                                                          retall=True,
-                                                          **kwargs)
+                                                            maxiter=maxiter,
+                                                            maxfun=maxfun,
+                                                            disp=False,
+                                                            skip_hessian=True,
+                                                            callback=None,
+                                                            full_output=True,
+                                                            retall=True,
+                                                            **kwargs)
         if verbose:
             print(result.summary())
+            print(result.mle_settings)
             print(result.mle_retvals)
             
         return result
@@ -166,9 +170,13 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         
         self.weights = weights
         self.exposure = exposure
-    
+
+    # min_binom_prob=1.e-2, max_binom_prob=0.99
     def nloglikeobs(self, params):
         params = np.exp(params)
+        
+        # clip_params = params.copy()
+        # clip_params[:-1] = np.clip(clip_params[:-1], a_min=min_binom_prob, a_max=max_binom_prob)
         
         aa = self.exog @ params[:-1] * params[-1]
         bb = self.exog @ (1. - params[:-1]) * params[-1]
@@ -188,17 +196,17 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                 start_params = self.start_params                
             else:
                 # NB unity -> added variance propto coverage. 10. * eff_coverage -> 10% above Poisson.
-                start_tau = 1.
-                start_params = np.append(0.5 * np.ones(self.nparams), 10. * eff_coverage)
+                start_tau = 10. * eff_coverage
+                start_params = np.append(0.5 * np.ones(self.nparams), start_tau)
 
         start_params = np.log(start_params)
         
-        # NB see https://www.statsmodels.org/dev/_modules/statsmodels/base/model.html#LikelihoodModel
         kwargs.pop("disp")
         
         def callback(params):
             print(f"Weighted_BetaBinomial fit: {params}")
-        
+
+        # NB see https://www.statsmodels.org/dev/_modules/statsmodels/base/model.html#LikelihoodModel
         result = super(Weighted_BetaBinom, self).fit(start_params=start_params,
                                                      method=method,
                                                      maxiter=maxiter,
@@ -210,10 +218,9 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                                                      retall=True)
         result.params = np.exp(result.params)
 
-        # TODO HACK
         if verbose:
             print(result.summary())
-            # print(result.mle_settings)
+            print(result.mle_settings)
             print(result.mle_retvals)
         
         return result
