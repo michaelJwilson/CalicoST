@@ -761,64 +761,131 @@ def hmrfmix_pipeline(outdir, prefix, single_X, lengths, single_base_nb_mean, sin
             log_persample_weights[:, sidx] = np.where(this_persample_weight > 0, np.log(this_persample_weight), -50)
             log_persample_weights[:, sidx] = log_persample_weights[:, sidx] - scipy.special.logsumexp(log_persample_weights[:, sidx])
 
-
-def hmrfmix_reassignment_posterior_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, single_tumor_prop, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
+@profile
+def hmrfmix_reassignment_posterior_concatenate(
+        single_X,
+        single_base_nb_mean,
+        single_total_bb_RD,
+        single_tumor_prop,
+        res,
+        smooth_mat,
+        adjacency_mat,
+        prev_assignment,
+        sample_ids,
+        log_persample_weights,
+        spatial_weight,
+        hmmclass=hmm_sitewise,
+        return_posterior=False
+):
+    """
+    TODO
+    """
+    # TODO define N
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
     n_clones = np.max(prev_assignment) + 1
     n_states = res["new_p_binom"].shape[0]
+
     single_llf = np.zeros((N, n_clones))
+
     new_assignment = copy.copy(prev_assignment)
-    #
-    lambd = np.sum(single_base_nb_mean, axis=1) / np.sum(single_base_nb_mean)
-    if np.sum(single_base_nb_mean) > 0:
+
+    single_base_nb_mean_sum = np.sum(single_base_nb_mean)
+
+    lambd = np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum
+    log_lambd = np.log(lambd).reshape(-1,1)
+    
+    if single_base_nb_mean_sum > 0:
         logmu_shift = []
+        
         for c in range(n_clones):
-            this_pred_cnv = np.argmax(res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0)%n_states
-            logmu_shift.append( scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,:] + np.log(lambd).reshape(-1,1), axis=0) )
-        logmu_shift = np.vstack(logmu_shift)
-        kwargs = {"logmu_shift":logmu_shift, "sample_length":np.ones(n_clones,dtype=int) * n_obs}
+            this_pred_cnv = np.argmax(res["log_gamma"][:, (c * n_obs): (c * n_obs + n_obs)], axis=0) % n_states
+
+            to_append = scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,:] + log_lambd, axis=0)
+            logmu_shift.append( to_append )
+            
+        kwargs = {"logmu_shift": np.vstack(logmu_shift), "sample_length": n_obs * np.ones(n_clones, dtype=int)}
     else:
         kwargs = {}
-    #
+    
     posterior = np.zeros((N, n_clones))
 
     for i in trange(N):
         idx = smooth_mat[i,:].nonzero()[1]
         idx = idx[~np.isnan(single_tumor_prop[idx])]
-        for c in range(n_clones):
-            tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix( np.sum(single_X[:,:,idx], axis=2, keepdims=True), \
-                                            np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True), res["new_log_mu"], res["new_alphas"], \
-                                            np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True), res["new_p_binom"], res["new_taus"], np.ones((n_obs,1)) * np.mean(single_tumor_prop[idx]), **kwargs )
 
-            if np.sum(single_base_nb_mean[:,i:(i+1)] > 0) > 0 and np.sum(single_total_bb_RD[:,i:(i+1)] > 0) > 0:
-                ratio_nonzeros = 1.0 * np.sum(single_total_bb_RD[:,i:(i+1)] > 0) / np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
+        tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(
+            np.sum(single_X[:,:,idx], axis=2, keepdims=True),
+            np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
+            res["new_log_mu"],
+            res["new_alphas"],
+            np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True),
+	    res["new_p_binom"],
+	    res["new_taus"],
+	    np.ones((n_obs,1)) * np.mean(single_tumor_prop[idx]),
+	    **kwargs
+        )
+
+        # TODO single element?
+        single_base_nb_mean_sumi = np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
+        single_total_bb_RD_sumi = np.sum(single_total_bb_RD[:,i:(i+1)] > 0)
+        
+        for c in range(n_clones):
+            # DEPRECATE
+            # tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(
+            #    np.sum(single_X[:,:,idx], axis=2, keepdims=True),
+            #    np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
+            #    res["new_log_mu"],
+            #    res["new_alphas"],
+            #    np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True),
+            #    res["new_p_binom"],
+            #    res["new_taus"],
+            #    np.ones((n_obs,1)) * np.mean(single_tumor_prop[idx]),
+            #    **kwargs
+            # )
+
+            if single_base_nb_mean_sumi > 0 and single_total_bb_RD_sumi > 0:
+                ratio_nonzeros = 1.0 * single_total_bb_RD_sumi / single_base_nb_mean_sumi
                 # ratio_nonzeros = 1.0 * np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
+
+                # this_log_gamma = res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)]
+                
+                # single_llf[i,c] = ratio_nonzeros * np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + this_log_gamma, axis=0 )
+                # single_llf[i,c] += np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + this_log_gamma, axis=0) )
+
                 single_llf[i,c] = ratio_nonzeros * np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) ) + \
                     np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
+                
             else:
+                # single_llf[i,c] = np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + this_log_gamma, axis=0) )
+                # single_llf[i,c] += np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + this_log_gamma, axis=0) ) 
+
                 single_llf[i,c] = np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) ) + \
                     np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
+                
         w_node = single_llf[i,:]
         w_node += log_persample_weights[:,sample_ids[i]]
         w_edge = np.zeros(n_clones)
+        
         for j in adjacency_mat[i,:].nonzero()[1]:
             # w_edge[new_assignment[j]] += 1
             w_edge[new_assignment[j]] += adjacency_mat[i,j]
+            
         new_assignment[i] = np.argmax( w_node + spatial_weight * w_edge )
-        #
+
         posterior[i,:] = np.exp( w_node + spatial_weight * w_edge - scipy.special.logsumexp(w_node + spatial_weight * w_edge) )
 
     # compute total log likelihood log P(X | Z) + log P(Z)
     total_llf = np.sum(single_llf[np.arange(N), new_assignment])
+    
     for i in range(N):
         total_llf += np.sum( spatial_weight * np.sum(new_assignment[adjacency_mat[i,:].nonzero()[1]] == new_assignment[i]) )
+        
     if return_posterior:
         return new_assignment, single_llf, total_llf, posterior
     else:
         return new_assignment, single_llf, total_llf
-
-
+            
 def aggr_hmrfmix_reassignment_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, single_tumor_prop, res, pred, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
