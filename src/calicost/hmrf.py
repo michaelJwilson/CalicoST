@@ -114,44 +114,62 @@ def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, re
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def hmrf_reassignment_posterior_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
     n_clones = np.max(prev_assignment) + 1
     n_states = res["new_p_binom"].shape[0]
-    single_llf = np.zeros((N, n_clones))
+
     new_assignment = copy.copy(prev_assignment)
-    #
+
+    single_llf = np.zeros((N, n_clones))
     posterior = np.zeros((N, n_clones))
 
     for i in trange(N):
         idx = smooth_mat[i,:].nonzero()[1]
-        tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom( np.sum(single_X[:,:,idx], axis=2, keepdims=True), \
-                                            np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True), res["new_log_mu"], res["new_alphas"], \
-                                            np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True), res["new_p_binom"], res["new_taus"])
+        tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(
+            np.sum(single_X[:,:,idx], axis=2, keepdims=True),
+            np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
+            res["new_log_mu"],
+            res["new_alphas"],
+            np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True),
+            res["new_p_binom"],
+            res["new_taus"]
+        )
+
+        single_base_nb_mean_sum = np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
+        single_total_bb_RD_sum = np.sum(single_total_bb_RD[:,i:(i+1)] > 0)
+
+        if single_base_nb_mean_sum > 0 and single_total_bb_RD_sum > 0:
+            # DEPRECATE
+            # ratio_nonzeros = np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
+            
+            ratio_nonzeros = single_total_bb_RD_sum / single_base_nb_mean_sum
+
+        else:
+            ratio_nonzeros = 1.0
+            
         for c in range(n_clones):
-            if np.sum(single_base_nb_mean[:,i:(i+1)] > 0) > 0 and np.sum(single_total_bb_RD[:,i:(i+1)] > 0) > 0:
-                ratio_nonzeros = 1.0 * np.sum(single_total_bb_RD[:,i:(i+1)] > 0) / np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
-                # ratio_nonzeros = 1.0 * np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
-                single_llf[i,c] = ratio_nonzeros * np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) ) + \
-                    np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
-            else:
-                single_llf[i,c] = np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) ) + \
-                    np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
+            single_llf[i,c] = ratio_nonzeros * np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
+            single_llf[i,c] += np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:, :, 0] + res["log_gamma"][:, (c*n_obs):(c*n_obs+n_obs)], axis=0) )
+                
         w_node = single_llf[i,:]
         w_node += log_persample_weights[:,sample_ids[i]]
         w_edge = np.zeros(n_clones)
+        
         for j in adjacency_mat[i,:].nonzero()[1]:
             w_edge[new_assignment[j]] += adjacency_mat[i,j]
-        new_assignment[i] = np.argmax( w_node + spatial_weight * w_edge )
-        #
+            
+        new_assignment[i] = np.argmax( w_node + spatial_weight * w_edge )        
         posterior[i,:] = np.exp( w_node + spatial_weight * w_edge - scipy.special.logsumexp(w_node + spatial_weight * w_edge) )
 
     # compute total log likelihood log P(X | Z) + log P(Z)
     total_llf = np.sum(single_llf[np.arange(N), new_assignment])
+    
     for i in range(N):
         total_llf += np.sum( spatial_weight * np.sum(new_assignment[adjacency_mat[i,:].nonzero()[1]] == new_assignment[i]) )
+        
     if return_posterior:
         return new_assignment, single_llf, total_llf, posterior
     else:
