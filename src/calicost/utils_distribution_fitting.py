@@ -170,13 +170,10 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         
         self.weights = weights
         self.exposure = exposure
-
-    # min_binom_prob=1.e-2, max_binom_prob=0.99
+        
+    # TODO min_binom_prob=1.e-2, max_binom_prob=0.99
     def nloglikeobs(self, params):
         params = np.exp(params)
-        
-        # clip_params = params.copy()
-        # clip_params[:-1] = np.clip(clip_params[:-1], a_min=min_binom_prob, a_max=max_binom_prob)
         
         aa = self.exog @ params[:-1] * params[-1]
         bb = self.exog @ (1. - params[:-1]) * params[-1]
