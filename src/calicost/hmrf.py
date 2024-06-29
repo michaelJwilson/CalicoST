@@ -638,7 +638,7 @@ def edge_update(n_clones, idx, values):
         w_edge[idx[i]] += value
 
     return w_edge
-    
+
 @profile
 def hmrfmix_reassignment_posterior(
         single_X,
@@ -655,9 +655,9 @@ def hmrfmix_reassignment_posterior(
         hmmclass=hmm_sitewise,
         return_posterior=False
 ):
-    # NB N ~ 13_344
+    # NB N ~ 13_344                                                                                                                                                                                                   
     N = single_X.shape[2]
-    
+
     n_obs = single_X.shape[0]
     n_clones = res["new_log_mu"].shape[1]
     n_states = res["new_p_binom"].shape[0]
@@ -666,9 +666,9 @@ def hmrfmix_reassignment_posterior(
 
     single_base_nb_mean_sum = np.sum(single_base_nb_mean)
     log_lambd = np.log(np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum)
-    
+
     posterior = np.zeros((N, n_clones))
-    
+
     for i in trange(N, desc="hmrfmix_reassignment_posterior"):
         idx = smooth_mat[i,:].nonzero()[1]
         idx = idx[~np.isnan(single_tumor_prop[idx])]
@@ -748,7 +748,7 @@ def hmrfmix_reassignment_posterior(
     else:
         return new_assignment, single_llf, total_llf
 
-
+    
 def hmrfmix_pipeline(outdir, prefix, single_X, lengths, single_base_nb_mean, single_total_bb_RD, single_tumor_prop, initial_clone_index, n_states, log_sitewise_transmat, \
     coords=None, smooth_mat=None, adjacency_mat=None, sample_ids=None, max_iter_outer=5, nodepotential="max", hmmclass=hmm_sitewise, params="stmp", t=1-1e-6, random_state=0, \
     init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
