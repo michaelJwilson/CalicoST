@@ -665,7 +665,7 @@ def hmrfmix_reassignment_posterior(
     new_assignment = copy.copy(prev_assignment)
 
     single_base_nb_mean_sum = np.sum(single_base_nb_mean)
-    lambd = np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum
+    log_lambd = np.log(np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum)
     
     posterior = np.zeros((N, n_clones))
     
@@ -680,12 +680,12 @@ def hmrfmix_reassignment_posterior(
         single_base_nb_mean_idx_sum_0 = np.sum(single_base_nb_mean[:,idx] > 0)
         single_total_bb_RD_idx_sum_0 = np.sum(single_total_bb_RD[:,idx] > 0)
         
-        single_tumor_prop_idx_mean = np.mean(single_tumor_prop[idx])
+        single_tumor_prop_idx_mean = np.ones((n_obs, 1)) * np.mean(single_tumor_prop[idx])
         
         for c in range(n_clones):
             if single_base_nb_mean_sum > 0:
                 this_pred_cnv = res["pred_cnv"][:,c]
-                logmu_shift = np.array( scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,c] + np.log(lambd), axis=0) )
+                logmu_shift = np.array( scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,c] + log_lambd, axis=0) )
                 kwargs = {"logmu_shift": logmu_shift.reshape(1,1), "sample_length": np.array([n_obs])}
             else:
                 kwargs = {}
@@ -698,7 +698,7 @@ def hmrfmix_reassignment_posterior(
                 single_total_bb_RD_idx_sum,
                 res["new_p_binom"][:,c:(c+1)],
                 res["new_taus"][:,c:(c+1)],
-                np.ones((n_obs,1)) * single_tumor_prop_idx_mean,
+                single_tumor_prop_idx_mean,
                 **kwargs
             )
             
