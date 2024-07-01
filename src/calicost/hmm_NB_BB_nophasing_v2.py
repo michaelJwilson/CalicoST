@@ -49,10 +49,10 @@ class hmm_nophasing_v2(object):
         n_states = log_mu.shape[0]
         (n_obs, n_comp, n_spots) = X.shape
 
-        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                                
+        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                              
         log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
 
-        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)                                                                                                         
+        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)                                                                                                        
         nb_mean = np.exp(log_mu[:, None, :]) * base_nb_mean[None, :, :]
         nb_std = np.sqrt(nb_mean + alphas[:, None, :] * nb_mean**2)
 
@@ -213,8 +213,7 @@ class hmm_nophasing_v2(object):
                     n, p = convert_params(nb_mean, nb_std)
                     
                     log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
-                    
-                    
+                                        
                 # AF from BetaBinom distribution
                 if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
                     this_weighted_tp = []
