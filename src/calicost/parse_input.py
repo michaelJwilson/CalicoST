@@ -73,7 +73,9 @@ def parse_visium(config):
             sample_ids[index] = s
     else:
         adata, cell_snp_Aallele, cell_snp_Ballele, unique_snp_ids = load_data(config["spaceranger_dir"], config["snp_dir"], config["filtergenelist_file"], config["filterregion_file"], config["normalidx_file"], config['min_snpumi_perspot'], config['min_percent_expressed_spots'])
-        adata.obs["sample"] = "unique_sample"
+
+        # TODO HACK
+        adata.obs["sample"] = ["unique_sample"]
         sample_list = [adata.obs["sample"][0]]
         sample_ids = np.zeros(adata.shape[0], dtype=int)
         across_slice_adjacency_mat = None
