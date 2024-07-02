@@ -928,7 +928,7 @@ def hmrfmix_reassignment_posterior_concatenate(
     
     posterior = np.zeros((N, n_clones))
 
-    for i in trange(N, "hmrfmix_reassignment_posterior_concatenate"):
+    for i in trange(N, desc="hmrfmix_reassignment_posterior_concatenate"):
         idx = smooth_mat[i,:].nonzero()[1]
         idx = idx[~np.isnan(single_tumor_prop[idx])]
 
