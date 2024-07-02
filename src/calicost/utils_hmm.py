@@ -125,7 +125,6 @@ def mylogsumexp_ax_keep(a, axis):
     s = np.log(s)
     return s + a_max
 
-
 def construct_unique_matrix(obs_count, total_count):
     """
     Attributes
@@ -368,7 +367,7 @@ def update_transition_sitewise(log_xi, is_diag=False):
         np.fill_diagonal(log_transmat, t)
     return log_transmat
 
-
+@profile
 def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrices, log_gamma, base_nb_mean, alphas, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2, min_estep_weight=0.1):
     """
@@ -470,7 +469,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, base_nb_mean, alphas, tumor_prop, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -579,7 +578,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrices, log_gamma, total_bb_RD, taus, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -685,7 +684,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
     return new_p_binom, new_taus
 
-
+@profile
 def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, total_bb_RD, taus, tumor_prop, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -865,7 +864,7 @@ def update_transition_nophasing(log_xi, is_diag=False):
         np.fill_diagonal(log_transmat, t)
     return log_transmat
 
-
+@profile
 def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, alphas, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -883,9 +882,11 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
+    
     # initialization
     new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
+    
     # expression signal by NB distribution
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
@@ -925,6 +926,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
             weights = []
             features = []
             state_posweights = []
+            
             for s in range(n_spots):
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
@@ -942,20 +944,33 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
                 weights.append( this_weights[idx_row_posweight] )
                 features.append( this_features[idx_row_posweight, :][:, idx_state_posweight] )
                 state_posweights.append( idx_state_posweight )
+                
             exposure = np.concatenate(exposure)
             y = np.concatenate(y)
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
+            
             model = Weighted_NegativeBinomial(y, features, weights=weights, exposure=exposure)
             res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
-            for s,idx_state_posweight in enumerate(state_posweights):
+            
+            for s, idx_state_posweight in enumerate(state_posweights):
                 l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                 l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
+                
                 new_log_mu[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
+                
             if not (start_log_mu is None):
-                res2 = model.fit(disp=0, maxiter=1500, start_params=np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]]), xtol=1e-4, ftol=1e-4)
+                new_start_log_mu = np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]])
+                
+                res2 = model.fit(disp=0,
+                                 maxiter=1500,
+                                 start_params=new_start_log_mu,
+                                 xtol=1e-4,
+                                 ftol=1e-4)
+                
                 if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
                     for s,idx_state_posweight in enumerate(state_posweights):
                         l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
@@ -963,11 +978,13 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
                     if res2.params[-1] > 0:
                         new_alphas[:,:] = res2.params[-1]
+                        
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+    
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, alphas, tumor_prop, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -1076,7 +1093,6 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
 def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, taus, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -1183,7 +1199,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
     return new_p_binom, new_taus
 
-
+@profile
 def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, taus, tumor_prop, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
