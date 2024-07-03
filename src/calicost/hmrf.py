@@ -678,7 +678,23 @@ def aggr_hmrfmix_reassignment(single_X, single_base_nb_mean, single_total_bb_RD,
         return new_assignment, single_llf, total_llf
     
 @profile
-def hmrfmix_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_RD, single_tumor_prop, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
+def hmrfmix_reassignment_posterior(
+        single_X,
+        single_base_nb_mean,
+        single_total_bb_RD,
+        single_tumor_prop,
+        res,
+        smooth_mat,
+        adjacency_mat,
+        prev_assignment,
+        sample_ids,
+        log_persample_weights,
+        spatial_weight,
+        hmmclass=hmm_sitewise,
+        return_posterior=False
+):
+    """
+    """
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
     n_clones = res["new_log_mu"].shape[1]
@@ -687,7 +703,8 @@ def hmrfmix_reassignment_posterior(single_X, single_base_nb_mean, single_total_b
     new_assignment = copy.copy(prev_assignment)
 
     single_base_nb_mean_sum = np.sum(single_base_nb_mean)
-    
+
+    # NB relative baseline expression.
     lambd = np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum
 
     single_llf = np.zeros((N, n_clones))
@@ -699,6 +716,7 @@ def hmrfmix_reassignment_posterior(single_X, single_base_nb_mean, single_total_b
         idx = smooth_mat[i,:].nonzero()[1]
         idx = idx[~np.isnan(single_tumor_prop[idx])]
 
+        # NB aggregate over select spots (TBC)
         single_X_sum2 = np.sum(single_X[:,:,idx], axis=2, keepdims=True)
         single_base_nb_mean_idx_sum1 = np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True)
         single_total_bb_RD_sum1 = np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True)
@@ -706,8 +724,10 @@ def hmrfmix_reassignment_posterior(single_X, single_base_nb_mean, single_total_b
         for c in range(n_clones):
             if single_base_nb_mean_sum > 0:
                 this_pred_cnv = res["pred_cnv"][:,c]
-                logmu_shift = np.array( scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,c] + np.log(lambd), axis=0) )
-                kwargs = {"logmu_shift":logmu_shift.reshape(1,1), "sample_length":np.array([n_obs])}
+                logmu_shift = np.array(
+                    scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,c] + np.log(lambd), axis=0)
+                )
+                kwargs = {"logmu_shift": logmu_shift.reshape(1,1), "sample_length": np.array([n_obs])}
             else:
                 kwargs = {}
                 
