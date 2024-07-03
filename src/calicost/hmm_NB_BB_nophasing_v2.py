@@ -194,26 +194,31 @@ class hmm_nophasing_v2(object):
         # NB initialize log_emission
         log_emission_baf = np.zeros((n_states, n_obs, n_spots))
         
-        for i in np.arange(n_states):
-            for s in np.arange(n_spots):
-                idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
+        for s in np.arange(n_spots):
+            idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
+
+            if len(idx_nonzero_baf) == 0:
+                continue
                 
-                # AF from BetaBinom distribution
+            for i in np.arange(n_states):
                 if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
                     this_weighted_tp = []
                     
                     for c in range(len(kwargs["sample_length"])):
                         range_s = np.sum(kwargs["sample_length"][:c])
                         range_t = np.sum(kwargs["sample_length"][:(c+1)])
-                        this_weighted_tp.append( tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) / (tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) + 1 - tumor_prop[range_s:range_t,s]) )
+
+                        this_weighted_tp.append(
+                            tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) / (tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) + 1. - tumor_prop[range_s:range_t,s])
+                        )
                         
                     this_weighted_tp = np.concatenate(this_weighted_tp)
+                    
                 else:
                     this_weighted_tp = tumor_prop[:,s]
                                     
-                if len(idx_nonzero_baf) > 0:
-                    mix_p_A = p_binom[i, s] * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
-                    mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
+                    mix_p_A = p_binom[i, s] * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1. - this_weighted_tp[idx_nonzero_baf])
+                    mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1. - this_weighted_tp[idx_nonzero_baf])
                     
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
                     
