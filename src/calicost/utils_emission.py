@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import nbinom, betabinom
 from concurrent.futures import ThreadPoolExecutor
 
-NUM_THREADS = 2
+NUM_THREADS = 1
 
 
 def compute_nbinom_pmf_chunk(args):

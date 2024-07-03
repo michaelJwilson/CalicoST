@@ -173,17 +173,21 @@ def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, re
 
 @profile
 def hmrf_reassignment_posterior_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
+    """
+    """
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
     n_clones = np.max(prev_assignment) + 1
     n_states = res["new_p_binom"].shape[0]
-    single_llf = np.zeros((N, n_clones))
+
     new_assignment = copy.copy(prev_assignment)
-    #
+
+    single_llf = np.zeros((N, n_clones))
     posterior = np.zeros((N, n_clones))
 
     for i in trange(N, desc="hmrf_reassignment_posterior_concatenate"):
         idx = smooth_mat[i,:].nonzero()[1]
+        
         tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(
             np.sum(single_X[:,:,idx], axis=2, keepdims=True),
             np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
@@ -271,7 +275,7 @@ def aggr_hmrf_reassignment_concatenate(single_X, single_base_nb_mean, single_tot
     n_states = res["new_p_binom"].shape[0]
     single_llf = np.zeros((N, n_clones))
     new_assignment = copy.copy(prev_assignment)
-    #
+    
     posterior = np.zeros((N, n_clones))
 
     for i in trange(N, desc="aggr_hmrf_reassignment_concatenate"):
