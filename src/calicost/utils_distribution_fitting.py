@@ -89,7 +89,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         return -llf.dot(self.weights)
 
     @profile
-    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, method=OPTIMIZER, **kargs):
+    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, method=OPTIMIZER, verbose=False, **kwargs):
         self.exog_names.append('alpha')
         
         if start_params is None:
