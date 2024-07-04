@@ -5,6 +5,7 @@ import scipy.special
 from tqdm import trange
 from sklearn.mixture import GaussianMixture
 from calicost.utils_distribution_fitting import *
+from calicost.utils_profile import profile
 
 def convergence(new, old, tol):
     result = np.mean(np.abs( np.exp(new) - np.exp(old) ))
