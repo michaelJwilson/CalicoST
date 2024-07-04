@@ -73,7 +73,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         self.exposure = exposure
         self.log_exposure = np.log(exposure)
         self.seed = seed
-
+        
     def nloglikeobs(self, params):
         log_mean = self.exog @ params[:-1] + self.log_exposure
         mean = np.exp(log_mean)
