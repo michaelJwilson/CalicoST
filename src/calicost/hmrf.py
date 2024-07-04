@@ -706,6 +706,7 @@ def hmrfmix_reassignment_posterior(
 
     new_assignment = copy.copy(prev_assignment)
 
+    # NB runtime significant.
     single_base_nb_mean_sum = np.sum(single_base_nb_mean)
 
     # NB relative baseline expression.
