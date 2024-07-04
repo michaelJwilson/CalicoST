@@ -217,8 +217,8 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                 # start_tau = 10. * eff_coverage
                 start_tau = 1.
 
-                # TODO HACK
-                start_params = np.append(0.5 * np.ones(self.nparams), start_tau)
+                # TODO HACK                
+                start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), start_tau)
 
         # start_params = np.log(start_params)
 
@@ -279,7 +279,7 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
                 start_tau = 1.
                 
                 # TODO HACK
-                start_params = np.append(0.5 * np.ones(self.nparams), start_tau)
+                start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), start_tau)
 
         # start_params = np.log(start_params) 
                 
