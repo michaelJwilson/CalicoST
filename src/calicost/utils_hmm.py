@@ -401,8 +401,8 @@ def update_emission_params_nb_sitewise_uniqvalues(
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
 
-    if new_log_mu is None:
-        logger.info("update_emission_params_nb_sitewise_uniqvalues: setting zeros for log mu.")
+    if start_log_mu is None:
+        logger.info("setting zeros for log mu.")
         
     # initialization
     new_log_mu = copy.copy(start_log_mu) if start_log_mu is not None else np.zeros((n_states, n_spots))
@@ -542,6 +542,9 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
+
+    if start_log_mu is None:
+        logger.info("setting zeros for log mu.")
     
     # initialization
     new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
@@ -587,6 +590,8 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
                         new_log_mu[i, s] = res.params[0] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[0]
                         new_alphas[i, s] = res.params[-1] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[-1]
         else:
+            logger.info("assuming shared NB dispersion.")
+            
             exposure = []
             y = []
             weights = []
@@ -632,19 +637,41 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
                 l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                 l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
                 new_log_mu[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
+                
             if not (start_log_mu is None):
-                res2 = model.fit(disp=0, maxiter=1500, start_params=np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]]), xtol=1e-4, ftol=1e-4)
-                if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
+                logger.info("Solving for provided start_log_mu.")
+                
+                res2 = model.fit(
+                    disp=0,
+                    maxiter=1500,
+                    start_params=np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]]),
+                    xtol=1e-4,
+                    ftol=1e-4
+                )
+
+                nloglike2 = model.nloglikeobs(res2.params)
+                nloglike = model.nloglikeobs(res.params)
+                
+                if nloglike2 < nloglike:
+                    logger.info("Favoured start_params over: {nloglike2:.6e} vs {nloglike:.6e}")
+                    
                     for s,idx_state_posweight in enumerate(state_posweights):
                         l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                         l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
+                        
                     if res2.params[-1] > 0:
                         new_alphas[:,:] = res2.params[-1]
+
+                else:
+                    logger.info("Disfavoured start_params over: {nloglike2:.6e} vs {nloglike:.6e}")
+                        
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+    
     return new_log_mu, new_alphas
 
 
@@ -666,9 +693,11 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
+
     # initialization
     new_p_binom = copy.copy(start_p_binom) if not start_p_binom is None else np.ones((n_states, n_spots)) * 0.5
     new_taus = copy.copy(taus)
+    
     if fix_BB_dispersion:
         for s in np.arange(len(unique_values)):
             tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
