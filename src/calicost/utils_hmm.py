@@ -372,8 +372,19 @@ def update_transition_sitewise(log_xi, is_diag=False):
     return log_transmat
 
 
-def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrices, log_gamma, base_nb_mean, alphas, \
-    start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2, min_estep_weight=0.1):
+def update_emission_params_nb_sitewise_uniqvalues(
+        unique_values,
+        mapping_matrices,
+        log_gamma,
+        base_nb_mean,
+        alphas,
+        start_log_mu=None,
+        fix_NB_dispersion=False,
+        shared_NB_dispersion=False,
+        min_log_rdr=-2,
+        max_log_rdr=2,
+        min_estep_weight=0.1
+):
     """
     Attributes
     ----------
@@ -389,9 +400,12 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
-    
+
+    if new_log_mu is None:
+        logger.info("update_emission_params_nb_sitewise_uniqvalues: setting zeros for log mu.")
+        
     # initialization
-    new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
+    new_log_mu = copy.copy(start_log_mu) if start_log_mu is not None else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
     
     # expression signal by NB distribution
@@ -433,6 +447,8 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
                         new_log_mu[i, s] = res.params[0] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[0]
                         new_alphas[i, s] = res.params[-1] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[-1]
         else:
+            logger.info("assuming shared NB dispersion.")
+            
             exposure = []
             y = []
             weights = []
@@ -464,6 +480,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
             y = np.concatenate(y)
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
+            
             model = Weighted_NegativeBinomial(y, features, weights=weights, exposure=exposure)
             res = model.fit(disp=0, maxiter=1_500, xtol=1.e-4, ftol=1.e-4)
             
@@ -474,22 +491,33 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
                 
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
+
+            if start_log_mu is not None):
+                logger.info("Solving for provided start_log_mu.")
                 
-            if not (start_log_mu is None):
                 start_params = [start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)]
                 start_params += [np.ones(1) * alphas[0,s]]
                 start_params = np.concatenate(start_params)
                 
-                res2 = model.fit(disp=0, maxiter=1500, start_params=start_params, xtol=1.e-4, ftol=1.e-4)
+                res2 = model.fit(disp=0, maxiter=1_500, start_params=start_params, xtol=1.e-4, ftol=1.e-4)
+
+                nloglike2 = model.nloglikeobs(res2.params)
+                nloglike = model.nloglikeobs(res.params)
                 
-                if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
+                if nloglike2 < nloglike:
+                    logger.info("Favoured start_params over: {nloglike2:.6e} vs {nloglike:.6e}")
+                    
                     for s,idx_state_posweight in enumerate(state_posweights):
                         l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                         l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
+                        
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
                         
                     if res2.params[-1] > 0:
                         new_alphas[:,:] = res2.params[-1]
+
+                else:
+                    logger.info("Disfavoured start_params over: {nloglike2:.6e} vs {nloglike:.6e}")
                         
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
