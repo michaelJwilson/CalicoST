@@ -176,7 +176,9 @@ class hmm_nophasing_v2(object):
         n_states = log_mu.shape[0]
         n_obs, n_comp, n_spots = X.shape
 
-        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                                                                                                                                                                              
+        max_axis = np.argmax(X.shape)
+        
+        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                                                                                                                                                                             
         log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
 
         # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)
@@ -187,7 +189,7 @@ class hmm_nophasing_v2(object):
         nn, pp = convert_params_var(nb_mean, nb_var)
 
         idx = np.where(nb_mean > 0.)
-        log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx])
+        log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx], axis=max_axis)
 
         if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
             sample_lengths = kwargs["sample_length"]
@@ -210,9 +212,7 @@ class hmm_nophasing_v2(object):
         nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
 
         idx = np.where(nn > 0.)
-        axis = np.argmax(X.shape)
-
-        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx], axis=axis)
+        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx], axis=max_axis)
 
         return log_emission_rdr, log_emission_baf
     
