@@ -176,10 +176,6 @@ class hmm_nophasing_v2(object):
         """
         n_states = log_mu.shape[0]
         n_obs, n_comp, n_spots = X.shape
-
-        # TODO HACK
-        # max_axis = np.argmax(X.shape)
-        max_axis = 0 
         
         # NB (n_states, n_obs, n_spots) == (7, 4248, 1)
         log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
@@ -194,7 +190,7 @@ class hmm_nophasing_v2(object):
         idx = (base_nb_mean > 0.)
         idx = np.tile(idx, (n_states, 1, 1))
         
-        log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx], axis=max_axis)
+        log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx])
 
         if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
             sample_lengths = kwargs["sample_length"]
