@@ -13,6 +13,7 @@ import copy
 from calicost.utils_distribution_fitting import *
 from calicost.utils_emission import thread_nbinom, thread_betabinom
 from calicost.utils_hmm import *
+from calicost.utils_tumor import get_tumor_weight
 import networkx as nx
 
 """
@@ -191,48 +192,24 @@ class hmm_nophasing_v2(object):
         # NB initialize log_emission
         log_emission_baf = np.zeros((n_states, n_obs, n_spots))
 
-        """
-        # TODO
-        kk = np.tile(X[:, 1, :], (n_states, 1, 1))
-        nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
-
-        # NB (states, spots)                                                                                                                                                                                         
-        aa = p_binom * taus
-        bb = (1. - p_binom) * taus
-
-        aa = np.tile(aa[:, None, :], (1, n_obs, 1))
-        bb = np.tile(bb[:, None, :], (1, n_obs, 1))
-
-        idx = np.where(nn > 0.)
-        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx])
-        """
-        
+        if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
+            sample_lengths = kwargs["sample_length"]
+            logmu_shift = kwargs["logmu_shift"]
+            
+            tumor_weight = get_tumor_weight(sample_lengths, tumor_prop, log_mu, logmu_shift)
+        else:
+            tumor_weight = tumor_prop
+            
+            
         for s in np.arange(n_spots):
             idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
 
             if len(idx_nonzero_baf) == 0:
                 continue
-                
+            
             for i in np.arange(n_states):
-                if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
-                    this_weighted_tp = []
-                    
-                    for c in range(len(kwargs["sample_length"])):
-                        range_s = np.sum(kwargs["sample_length"][:c])
-                        range_t = np.sum(kwargs["sample_length"][:(c+1)])
-
-                        range_tumor_prop = tumor_prop[range_s:range_t, s]
-                        shifted_mu = np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s])
-                        
-                        this_weighted_tp.append(
-                            range_tumor_prop * shifted_mu / (range_tumor_prop * shifted_mu + 1. - range_tumor_prop)
-                        )
-                        
-                    this_weighted_tp = np.concatenate(this_weighted_tp)[idx_nonzero_baf]
-                    
-                else:
-                    this_weighted_tp = tumor_prop[idx_nonzero_baf,s]
-                                    
+                this_weighted_tp = tumor_weight[i, idx_nonzero_baf,:]
+                
                 mix_p_A = p_binom[i, s] * this_weighted_tp + 0.5 * (1. - this_weighted_tp)
                 mix_p_B = (1. - p_binom[i, s]) * this_weighted_tp + 0.5 * (1. - this_weighted_tp)
 
