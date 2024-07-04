@@ -492,7 +492,7 @@ def update_emission_params_nb_sitewise_uniqvalues(
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
 
-            if start_log_mu is not None):
+            if start_log_mu is not None:
                 logger.info("Solving for provided start_log_mu.")
                 
                 start_params = [start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)]
