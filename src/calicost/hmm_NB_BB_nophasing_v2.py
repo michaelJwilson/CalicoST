@@ -189,6 +189,9 @@ class hmm_nophasing_v2(object):
         nn, pp = convert_params_var(nb_mean, nb_var)
 
         idx = np.where(nb_mean > 0.)
+
+        logger.info(f"Calculating NegativeBinomial for {len(idx)} elements.")
+        
         log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx], axis=max_axis)
 
         if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
@@ -212,6 +215,9 @@ class hmm_nophasing_v2(object):
         nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
 
         idx = np.where(nn > 0.)
+
+        logger.info(f"Calculating BetaBinomial for {len(idx)} elements.")
+        
         log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx], axis=max_axis)
 
         return log_emission_rdr, log_emission_baf
