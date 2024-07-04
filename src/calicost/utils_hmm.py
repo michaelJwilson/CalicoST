@@ -405,7 +405,7 @@ def update_emission_params_nb_sitewise_uniqvalues(
         logger.info("setting zeros for log mu.")
         
     # initialization
-    new_log_mu = copy.copy(start_log_mu) if start_log_mu is not None else np.zeros((n_states, n_spots))
+    new_log_mu = copy.copy(start_log_mu) if not (start_log_mu is None) else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
     
     # expression signal by NB distribution
@@ -492,7 +492,7 @@ def update_emission_params_nb_sitewise_uniqvalues(
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
 
-            if start_log_mu is not None:
+            if not (start_log_mu is None):
                 logger.info("Solving for provided start_log_mu.")
                 
                 start_params = [start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)]
@@ -547,7 +547,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
         logger.info("setting zeros for log mu.")
     
     # initialization
-    new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
+    new_log_mu = copy.copy(start_log_mu) if not (start_log_mu is None) else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
     
     # expression signal by NB distribution
@@ -695,7 +695,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     gamma = np.exp(log_gamma)
 
     # initialization
-    new_p_binom = copy.copy(start_p_binom) if not start_p_binom is None else np.ones((n_states, n_spots)) * 0.5
+    new_p_binom = copy.copy(start_p_binom) if not (start_p_binom is None) else np.ones((n_states, n_spots)) * 0.5
     new_taus = copy.copy(taus)
     
     if fix_BB_dispersion:
@@ -802,7 +802,7 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
     # initialization
-    new_p_binom = copy.copy(start_p_binom) if not start_p_binom is None else np.ones((n_states, n_spots)) * 0.5
+    new_p_binom = copy.copy(start_p_binom) if not (start_p_binom is None) else np.ones((n_states, n_spots)) * 0.5
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(n_spots):
@@ -982,7 +982,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     gamma = np.exp(log_gamma)
     
     # initialization
-    new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
+    new_log_mu = copy.copy(start_log_mu) if not (start_log_mu is None) else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
     
     # expression signal by NB distribution
@@ -1088,7 +1088,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
     # initialization
-    new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
+    new_log_mu = copy.copy(start_log_mu) if not (start_log_mu is None) else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
     # expression signal by NB distribution
     if fix_NB_dispersion:
@@ -1199,7 +1199,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
     gamma = np.exp(log_gamma)
     
     # initialization
-    new_p_binom = copy.copy(start_p_binom) if not start_p_binom is None else np.ones((n_states, n_spots)) * 0.5
+    new_p_binom = copy.copy(start_p_binom) if not (start_p_binom is None) else np.ones((n_states, n_spots)) * 0.5
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(len(unique_values)):
@@ -1306,7 +1306,7 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
     # initialization
-    new_p_binom = copy.copy(start_p_binom) if not start_p_binom is None else np.ones((n_states, n_spots)) * 0.5
+    new_p_binom = copy.copy(start_p_binom) if not (start_p_binom is None) else np.ones((n_states, n_spots)) * 0.5
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(n_spots):

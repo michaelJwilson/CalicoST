@@ -29,7 +29,7 @@ logger = logging.getLogger("calicost")
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
-fhandler = logging.FileHandler('calicost.log')
+fhandler = logging.FileHandler('calicost.log', mode="w")
 
 formatter = logging.Formatter("%(asctime)s - %(process)d - %(levelname)s - %(name)s:%(lineno)d - %(message)s")
 
