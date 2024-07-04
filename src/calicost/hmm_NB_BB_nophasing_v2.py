@@ -50,10 +50,10 @@ class hmm_nophasing_v2(object):
 
         # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)                                                                                                        
         nb_mean = np.exp(log_mu[:, None, :]) * base_nb_mean[None, :, :]
-        nb_std = np.sqrt(nb_mean + alphas[:, None, :] * nb_mean**2)
+        nb_var = nb_mean + alphas[:, None, :] * nb_mean**2
 
         kk = np.tile(X[:, 0, :], (n_states, 1, 1))
-        nn, pp = convert_params(nb_mean, nb_std)
+        nn, pp = convert_params_var(nb_mean, nb_var)
 
         idx = np.where((nb_mean > 0.))
         log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx])
@@ -127,19 +127,13 @@ class hmm_nophasing_v2(object):
                     nb_std = np.sqrt(nb_mean + alphas[i, s] * nb_mean**2)
                     n, p = convert_params(nb_mean, nb_std)
 
-                    # DEPRECATE
-                    # log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
-
-                    log_emission_rdr[i, idx_nonzero_rdr, s] = thread_nbinom(X[idx_nonzero_rdr, 0, s], n, p)
+                    log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
                     
                 # AF from BetaBinom distribution
                 idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
                 
                 if len(idx_nonzero_baf) > 0:
-                    # DEPRECATE
-                    # log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
-
-                    log_emission_baf[i, idx_nonzero_baf, s] = thread_betabinom(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
+                    log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
                     
         return log_emission_rdr, log_emission_baf
         
