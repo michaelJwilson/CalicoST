@@ -210,7 +210,9 @@ class hmm_nophasing_v2(object):
         nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
 
         idx = np.where(nn > 0.)
-        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx], axis=1)
+        axis = np.argmax(X.shape)
+
+        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx], axis=axis)
 
         return log_emission_rdr, log_emission_baf
     
