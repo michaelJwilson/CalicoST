@@ -14,6 +14,7 @@ from calicost.utils_distribution_fitting import *
 from calicost.utils_emission import thread_nbinom, thread_betabinom
 from calicost.utils_hmm import *
 from calicost.utils_tumor import get_tumor_weight
+from calicost.utils_profile import profile
 import networkx as nx
 
 """

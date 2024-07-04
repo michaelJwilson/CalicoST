@@ -17,6 +17,7 @@ from calicost.hmm_NB_BB_phaseswitch import *
 from calicost.utils_distribution_fitting import *
 from calicost.utils_IO import *
 from calicost.utils_hmrf import *
+from calicost.utils_profile import profile
 
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning

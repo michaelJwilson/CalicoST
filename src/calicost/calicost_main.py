@@ -23,6 +23,7 @@ from calicost.utils_IO import *
 from calicost.find_integer_copynumber import *
 from calicost.parse_input import *
 from calicost.utils_plotting import *
+from calicost.utils_profile import profile
 from tqdm import trange
 
 logger = logging.getLogger("calicost")
