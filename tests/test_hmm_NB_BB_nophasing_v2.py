@@ -5,7 +5,7 @@ from calicost.hmm_NB_BB_nophasing_v2 import hmm_nophasing_v2
 
 @pytest.fixture
 def mock_data():
-    (n_states, n_obs, n_spots) = (7, 4248, 1)
+    (n_states, n_obs, n_spots) = (7, 4_248, 1)
 
     X = 10 * np.ones(shape=(n_obs, 2, n_spots))
     base_nb_mean = 3 * np.ones(shape=(n_obs, n_spots))
@@ -38,17 +38,7 @@ def test_compute_emission_probability_nb_betabinom_mix_speed(benchmark, mock_dat
         X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
     )
     
-    def get_result():
-        return hmm.compute_emission_probability_nb_betabinom_mix_array(
-        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
-    )
-            
     exp_rdr, exp_baf = benchmark(get_exp)
-    # result_rdr, result_baf = benchmark(get_result)
-
-    # print(np.mean(exp_rdr == result_rdr))
-
-    # assert np.all(exp_baf == result_baf)
 
 def test_compute_emission_probability_nb_betabinom_mix_equality(mock_data):
     hmm = hmm_nophasing_v2()
