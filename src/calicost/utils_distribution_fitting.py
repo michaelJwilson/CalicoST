@@ -132,7 +132,7 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
         self.tumor_prop = tumor_prop
         
     def nloglikeobs(self, params):
-        mean = self.exposure * (self.tumor_prop * np.exp(self.exog @ params[:-1]) + 1. - self.tumor_prop)
+        mean = self.exposure * (self.tumor_prop * self.exog @ np.exp(params[:-1]) + 1. - self.tumor_prop)
         var = mean + params[-1] * mean**2.
 
         n, p = convert_params_var(mean, var)
@@ -195,7 +195,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         self.eff_coverage = np.average(self.exposure, weights=self.weights)
         
     def nloglikeobs(self, params):
-        params = np.exp(params)
+        # params = np.exp(params)
         
         a = (self.exog @ params[:-1]) * params[-1]
         b = self.exog @ (1. - params[:-1]) * params[-1]
@@ -220,7 +220,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
                 # TODO HACK
                 start_params = np.append(0.5 * np.ones(self.nparams), start_tau)
 
-        start_params = np.log(start_params)
+        # start_params = np.log(start_params)
 
         kwargs.pop("disp")
                 
@@ -237,7 +237,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
             **kwargs
         )
 
-        result.params = np.exp(result.params)
+        # result.params = np.exp(result.params)
 
         if verbose:
              print(result.summary())
@@ -256,6 +256,8 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         self.tumor_prop = tumor_prop
     
     def nloglikeobs(self, params):
+        # params = np.exp(params)
+        
         a = (self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1. - self.tumor_prop)) * params[-1]
         b = (self.exog @ (1. - params[:-1]) * self.tumor_prop + 0.5 * (1. - self.tumor_prop)) * params[-1]
 
@@ -273,12 +275,14 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
-                # start_tau = 10. * eff_coverage                                                                                                                                                                                                                                                                               
+                # start_tau = 10. * eff_coverage                                                                                                                                                                                                                                                       
                 start_tau = 1.
                 
                 # TODO HACK
                 start_params = np.append(0.5 * np.ones(self.nparams), start_tau)
 
+        # start_params = np.log(start_params) 
+                
         kwargs.pop("disp")
                 
         result = super(Weighted_BetaBinom_mix, self).fit(
@@ -293,6 +297,8 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
             retall=True,
             **kwargs
         )
+
+        # result.params = np.exp(result.params) 
 
         if verbose:
              print(result.summary())
@@ -311,6 +317,8 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
         self.eff_coverage = np.average(self.exposure, weights=self.weights)
         
     def nloglikeobs(self, params):
+        # params = np.exp(params)
+        
         a = (self.exog @ params) * self.tau
         b = (1 - self.exog @ params) * self.tau
 
@@ -318,19 +326,32 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
         llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)                                                                                                                                        
         # llf = thread_betabinom(self.endog, self.exposure, a, b)
         
-        neg_sum_llf = -llf.dot(self.weights)
-        return neg_sum_llf
+        return -llf.dot(self.weights)
     
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwargs):
+    def fit(self, start_params=None, maxiter=10000, maxfun=5000, verbose=False, **kwargs):
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
                 start_params = 0.1 * np.ones(self.nparams)
-        
-        return super(Weighted_BetaBinom_fixdispersion, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwargs)
+
+        # start_params = np.log(start_params)                                                                                                                                                                                                                                                           
+        kwargs.pop("disp")
+                
+        result = super(Weighted_BetaBinom_fixdispersion, self).fit(
+            start_params=start_params,
+            maxiter=maxiter,
+            maxfun=maxfun,
+            **kwargs
+        )
+
+        # result.params = np.exp(result.params)                                                                                                                                                                                                                                                         
+        if verbose:
+             print(result.summary())
+             print(result.mle_settings)
+             print(result.mle_retvals)
+
+        return result
 
 
 class Weighted_BetaBinom_fixdispersion_mix(GenericLikelihoodModel):
