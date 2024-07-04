@@ -132,7 +132,7 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
         self.tumor_prop = tumor_prop
         
     def nloglikeobs(self, params):
-        mean = self.exposure * (self.tumor_prop * self.exog @ np.exp(params[:-1]) + 1. - self.tumor_prop)
+        mean = self.exposure * (self.tumor_prop * (self.exog @ np.exp(params[:-1])) + 1. - self.tumor_prop)
         var = mean + params[-1] * mean**2.
 
         n, p = convert_params_var(mean, var)

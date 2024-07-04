@@ -735,6 +735,9 @@ def hmrfmix_reassignment_posterior(
         single_X_sum2 = np.sum(single_X[:,:,idx], axis=2, keepdims=True)
         single_base_nb_mean_idx_sum1 = np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True)
         single_total_bb_RD_sum1 = np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True)
+
+        single_base_nb_mean_sum_idx_0 = np.sum(single_base_nb_mean[:,idx] > 0)
+        single_total_bb_RD_sum_idx_0 = np.sum(single_total_bb_RD[:,idx] > 0)
         
         for c in range(n_clones):
             if single_base_nb_mean_sum > 0:
@@ -758,7 +761,7 @@ def hmrfmix_reassignment_posterior(
                 **kwargs
             )
             
-            if np.sum(single_base_nb_mean[:,idx] > 0) > 0 and np.sum(single_total_bb_RD[:,idx] > 0) > 0:
+            if single_base_nb_mean_sum_idx_0 > 0 and single_total_bb_RD_sum_idx_0 > 0:
                 ratio_nonzeros = 1.0 * np.sum(single_total_bb_RD[:,i:(i+1)] > 0) / np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
                 # ratio_nonzeros = 1.0 * np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
                 

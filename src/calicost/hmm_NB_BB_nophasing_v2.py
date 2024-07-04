@@ -55,7 +55,7 @@ class hmm_nophasing_v2(object):
         kk = np.tile(X[:, 0, :], (n_states, 1, 1))
         nn, pp = convert_params_var(nb_mean, nb_var)
 
-        idx = np.where((nb_mean > 0.))
+        idx = np.where(nb_mean > 0.)
         log_emission_rdr[idx] = thread_nbinom(kk[idx], nn[idx], pp[idx])
 
         # NB BAF                                                                                                                                                                                                     
@@ -172,10 +172,10 @@ class hmm_nophasing_v2(object):
         n_states = log_mu.shape[0]
         n_obs, n_comp, n_spots = X.shape
 
-        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                                                                                                                                                                                 
+        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)                                                                                                                                                                                                                                                                                                               
         log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
 
-        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)                                                                                                                                                                                                                                                           
+        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)
         nb_mean = base_nb_mean[None, :, :] * (tumor_prop[None, :, :] * np.exp(log_mu[:, None, :]) + 1. - tumor_prop[None, :, :])
         nb_var = nb_mean + alphas[:, None, :] * nb_mean**2
 
@@ -187,6 +187,22 @@ class hmm_nophasing_v2(object):
 
         # NB initialize log_emission
         log_emission_baf = np.zeros((n_states, n_obs, n_spots))
+
+        """
+        # TODO
+        kk = np.tile(X[:, 1, :], (n_states, 1, 1))
+        nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
+
+        # NB (states, spots)                                                                                                                                                                                         
+        aa = p_binom * taus
+        bb = (1. - p_binom) * taus
+
+        aa = np.tile(aa[:, None, :], (1, n_obs, 1))
+        bb = np.tile(bb[:, None, :], (1, n_obs, 1))
+
+        idx = np.where(nn > 0.)
+        log_emission_baf[idx] = thread_betabinom(kk[idx], nn[idx], aa[idx], bb[idx])
+        """
         
         for s in np.arange(n_spots):
             idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
@@ -201,9 +217,9 @@ class hmm_nophasing_v2(object):
                     for c in range(len(kwargs["sample_length"])):
                         range_s = np.sum(kwargs["sample_length"][:c])
                         range_t = np.sum(kwargs["sample_length"][:(c+1)])
-
+                        
                         this_weighted_tp.append(
-                            tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) / (tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) + 1. - tumor_prop[range_s:range_t,s])
+                            tumor_prop[range_s:range_t, s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) / (tumor_prop[range_s:range_t,s] * np.exp(log_mu[i, s] - kwargs["logmu_shift"][c,s]) + 1. - tumor_prop[range_s:range_t,s])
                         )
                         
                     this_weighted_tp = np.concatenate(this_weighted_tp)
@@ -212,8 +228,8 @@ class hmm_nophasing_v2(object):
                     this_weighted_tp = tumor_prop[:,s]
                                     
                     mix_p_A = p_binom[i, s] * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1. - this_weighted_tp[idx_nonzero_baf])
-                    mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1. - this_weighted_tp[idx_nonzero_baf])
-                    
+                    mix_p_B = (1. - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1. - this_weighted_tp[idx_nonzero_baf])
+
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
                     
         return log_emission_rdr, log_emission_baf
