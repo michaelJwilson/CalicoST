@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import nbinom, betabinom
 from concurrent.futures import ThreadPoolExecutor
 
-NUM_THREADS = 1
+NUM_THREADS = 4
 
 
 def compute_nbinom_pmf_chunk(args):
@@ -21,15 +21,15 @@ def compute_logsumexp_chunk(data_chunk):
     return scipy.special.logsumexp(data_chunk)
 
 
-def thread_nbinom(data, n, p, num_threads=NUM_THREADS):
+def thread_nbinom(data, n, p, num_threads=NUM_THREADS, axis=0):
     if num_threads == 1:
         return nbinom.logpmf(data, n, p)
 
     # NB defaults to 0th axis, see
     #    https://numpy.org/doc/stable/reference/generated/numpy.array_split.html
-    data_chunks = np.array_split(data, num_threads)
-    n_chunks = np.array_split(n, num_threads)
-    p_chunks = np.array_split(p, num_threads)
+    data_chunks = np.array_split(data, num_threads, axis=axis)
+    n_chunks = np.array_split(n, num_threads, axis=axis)
+    p_chunks = np.array_split(p, num_threads, axis=axis)
 
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         args = [xx for xx in zip(data_chunks, n_chunks, p_chunks)]
@@ -37,26 +37,26 @@ def thread_nbinom(data, n, p, num_threads=NUM_THREADS):
 
         # NB defaults to 0th axis, see
         #    https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
-        pmf_values = np.concatenate(list(results))
+        values = np.concatenate(list(results), axis=axis)
 
-    return pmf_values
+    return values
 
 
-def thread_betabinom(data, n, a, b, num_threads=NUM_THREADS):
+def thread_betabinom(data, n, a, b, num_threads=NUM_THREADS, axis=0):
     if num_threads == 1:
         return betabinom.logpmf(data, n, a, b)
 
-    data_chunks = np.array_split(data, num_threads)
-    n_chunks = np.array_split(n, num_threads)
-    a_chunks = np.array_split(a, num_threads)
-    b_chunks = np.array_split(b, num_threads)
+    data_chunks = np.array_split(data, num_threads, axis=axis)
+    n_chunks = np.array_split(n, num_threads, axis=axis)
+    a_chunks = np.array_split(a, num_threads, axis=axis)
+    b_chunks = np.array_split(b, num_threads, axis=axis)
 
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         args = [xx for xx in zip(data_chunks, n_chunks, a_chunks, b_chunks)]
         results = executor.map(compute_betabinom_pmf_chunk, args)
-        pmf_values = np.concatenate(list(results))
+        values = np.concatenate(list(results), axis=axis)
 
-    return pmf_values
+    return values
 
 
 def thread_logsumexp(data, num_threads=NUM_THREADS):
@@ -69,6 +69,6 @@ def thread_logsumexp(data, num_threads=NUM_THREADS):
         args = list(data_chunks)
 
         results = executor.map(compute_logsumexp_chunk, args)
-        results = np.array(list(results))
+        results = np.concatenate(list(results))
 
     return scipy.special.logsumexp(results)
