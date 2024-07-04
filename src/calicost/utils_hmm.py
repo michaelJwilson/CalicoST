@@ -455,24 +455,34 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
             model = Weighted_NegativeBinomial(y, features, weights=weights, exposure=exposure)
-            res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
+            res = model.fit(disp=0, maxiter=1_500, xtol=1.e-4, ftol=1.e-4)
+            
             for s,idx_state_posweight in enumerate(state_posweights):
                 l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                 l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
                 new_log_mu[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_alphas[:,:] = res.params[-1]
             if not (start_log_mu is None):
-                res2 = model.fit(disp=0, maxiter=1500, start_params=np.concatenate([start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)] + [np.ones(1) * alphas[0,s]]), xtol=1e-4, ftol=1e-4)
+                start_params = [start_log_mu[idx_state_posweight,s] for s,idx_state_posweight in enumerate(state_posweights)]
+                start_params += [np.ones(1) * alphas[0,s]]
+                start_params = np.concatenate(start_params)
+                
+                res2 = model.fit(disp=0, maxiter=1500, start_params=start_params, xtol=1.e-4, ftol=1.e-4)
+                
                 if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
                     for s,idx_state_posweight in enumerate(state_posweights):
                         l1 = int( np.sum([len(x) for x in state_posweights[:s]]) )
                         l2 = int( np.sum([len(x) for x in state_posweights[:(s+1)]]) )
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
+                        
                     if res2.params[-1] > 0:
                         new_alphas[:,:] = res2.params[-1]
+                        
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+    
     return new_log_mu, new_alphas
 
 
