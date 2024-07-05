@@ -5,7 +5,7 @@ from scipy.stats import nbinom, betabinom
 from concurrent.futures import ThreadPoolExecutor
 
 # TODO pre-defined thread pools
-NUM_THREADS = 1
+NUM_THREADS = 2
 
 
 def compute_nbinom_pmf_chunk(args):
@@ -23,7 +23,7 @@ def compute_logsumexp_chunk(data_chunk):
 
 
 def thread_nbinom(data, n, p, num_threads=NUM_THREADS, axis=0):
-    if (num_threads == 1) or data.shape[axis] < 10_000:
+    if (num_threads == 1) or data.size < 30_000:
         return nbinom.logpmf(data, n, p)
 
     # NB defaults to 0th axis, see
@@ -44,7 +44,7 @@ def thread_nbinom(data, n, p, num_threads=NUM_THREADS, axis=0):
 
 
 def thread_betabinom(data, n, a, b, num_threads=NUM_THREADS, axis=0):
-    if (num_threads == 1) or data.shape[axis] < 10_000:
+    if (num_threads == 1) or data.size < 30_000:
         return betabinom.logpmf(data, n, a, b)
 
     data_chunks = np.array_split(data, num_threads, axis=axis)
@@ -61,7 +61,7 @@ def thread_betabinom(data, n, a, b, num_threads=NUM_THREADS, axis=0):
 
 
 def thread_logsumexp(data, num_threads=NUM_THREADS):
-    if (num_threads == 1) or data.shape[axis] < 10_000:
+    if (num_threads == 1) or data.size < 30_000:
         return scipy.special.logsumexp(data)
 
     data_chunks = np.array_split(data, num_threads)
