@@ -11,13 +11,12 @@ from sklearn.cluster import KMeans
 import scanpy as sc
 import anndata
 import logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-logger = logging.getLogger()
 
 from calicost.utils_phase_switch import *
 from calicost.utils_distribution_fitting import *
 import subprocess
 
+logger = logging.getLogger(__name__)
 
 def load_data(spaceranger_dir, snp_dir, filtergenelist_file, filterregion_file, normalidx_file, min_snpumis=50, min_percent_expressed_spots=0.005):
     ##### read raw UMI count matrix #####
@@ -156,7 +155,8 @@ def load_joint_data(input_filelist, snp_dir, alignment_files, filtergenelist_fil
             adatatmp = sc.read_h5ad(f"{df_meta['spaceranger_dir'].iloc[i]}/filtered_feature_bc_matrix.h5ad")
         else:
             logging.error(f"{df_meta['spaceranger_dir'].iloc[i]} directory doesn't have a filtered_feature_bc_matrix.h5 or filtered_feature_bc_matrix.h5ad file!")
-
+            raise RuntimeError()
+        
         adatatmp.layers["count"] = adatatmp.X.A
         # reorder anndata spots to have the same order as df_this_barcode
         idx_argsort = pd.Categorical(adatatmp.obs.index, categories=list(df_this_barcode.barcode), ordered=True).argsort()
