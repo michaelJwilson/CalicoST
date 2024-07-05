@@ -18,6 +18,45 @@ def mock_data():
 
     return X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop
 
+def test_compute_emission_probability_nb_betabinom_array_speed(benchmark, mock_data):
+    hmm = hmm_nophasing_v2()
+    X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop = mock_data
+
+    def get_result():
+        return hmm.compute_emission_probability_nb_betabinom(
+        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus,
+    )
+
+    result_rdr, result_baf = benchmark(get_result)
+
+def test_compute_emission_probability_nb_betabinom_speed(benchmark, mock_data):
+    hmm = hmm_nophasing_v2()
+    X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop = mock_data
+
+    def get_exp():
+        return hmm.compute_emission_probability_nb_betabinom_v1(
+        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus,
+    )
+
+    exp_rdr, exp_baf = benchmark(get_exp)
+
+def test_compute_emission_probability_nb_betabinom_mix_equality(mock_data):
+    hmm = hmm_nophasing_v2()
+    X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop = mock_data
+
+
+    exp_rdr, exp_baf = hmm.compute_emission_probability_nb_betabinom_v1(
+        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus,
+    )
+
+    result_rdr, result_baf = hmm.compute_emission_probability_nb_betabinom(
+        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus,
+    )
+
+    np.testing.assert_allclose(exp_rdr, result_rdr)
+
+    assert np.all(exp_baf == result_baf)
+    
 def test_compute_emission_probability_nb_betabinom_mix_array_speed(benchmark, mock_data):
     hmm = hmm_nophasing_v2()
     X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop = mock_data
