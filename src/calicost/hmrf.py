@@ -39,7 +39,7 @@ def edge_update(n_clones, idx, values):
 
     return w_edge
 
-def solve_edges(i, adjacency_mat, new_assignment, n_clones, new=False):
+def solve_edges(i, adjacency_mat, new_assignment, n_clones, new=True):
     if new:
         neighbors = adjacency_mat[i,:].nonzero()[1]
         idx = np.where(new_assignment[neighbors] >= 0)[0]
@@ -140,24 +140,32 @@ def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, re
     new_assignment = copy.copy(prev_assignment)
     
     posterior = np.zeros((N, n_clones))
-
+    
     for i in trange(N, desc="aggr_hmrf_reassignment"):
         idx = smooth_mat[i,:].nonzero()[1]
-        # idx = np.append(idx, np.array([i]))
+        
+        single_X_idx_sum2 = np.sum(single_X[:,:,idx], axis=2, keepdims=True)
+        single_base_nb_mean_idx_sum1 = np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True)
+        single_total_bb_RD_idx_sum_1 = np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True)
+
+        single_base_nb_mean_sum_idx = np.sum(single_base_nb_mean[:,idx] > 0)
+        single_total_bb_RD_sum_idx = np.sum(single_total_bb_RD[:,idx] > 0)
+        
         for c in range(n_clones):
             tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(
-                np.sum(single_X[:,:,idx], axis=2, keepdims=True),
-                np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
+                single_X_idx_sum2,
+                single_base_nb_mean_idx_sum1, 
                 res["new_log_mu"][:,c:(c+1)],
                 res["new_alphas"][:,c:(c+1)],
-                np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True),
+                single_total_bb_RD_idx_sum_1,
                 res["new_p_binom"][:,c:(c+1)],
                 res["new_taus"][:,c:(c+1)]
             )
             
-            if np.sum(single_base_nb_mean[:,idx] > 0) > 0 and np.sum(single_total_bb_RD[:,idx] > 0) > 0:
+            if single_base_nb_mean_sum_idx > 0 and single_total_bb_RD_sum_idx > 0:
                 ratio_nonzeros = 1.0 * np.sum(single_total_bb_RD[:,idx] > 0) / np.sum(single_base_nb_mean[:,idx] > 0)
                 # ratio_nonzeros = 1.0 * np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
+                
                 single_llf[i,c] = ratio_nonzeros * np.sum(tmp_log_emission_rdr[pred[:,c], np.arange(n_obs), 0]) + np.sum(tmp_log_emission_baf[pred[:,c], np.arange(n_obs), 0])
             else:
                 single_llf[i,c] = np.sum(tmp_log_emission_rdr[pred[:,c], np.arange(n_obs), 0]) + np.sum(tmp_log_emission_baf[pred[:,c], np.arange(n_obs), 0])
@@ -173,6 +181,7 @@ def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, re
 
     # compute total log likelihood log P(X | Z) + log P(Z)
     total_llf = np.sum(single_llf[np.arange(N), new_assignment])
+
     for i in range(N):
         total_llf += np.sum( spatial_weight * np.sum(new_assignment[adjacency_mat[i,:].nonzero()[1]] == new_assignment[i]) )
     if return_posterior:
@@ -196,13 +205,19 @@ def hmrf_reassignment_posterior_concatenate(single_X, single_base_nb_mean, singl
 
     for i in trange(N, desc="hmrf_reassignment_posterior_concatenate"):
         idx = smooth_mat[i,:].nonzero()[1]
+
+        single_X_idx_sum2 = np.sum(single_X[:,:,idx], axis=2, keepdims=True)
+        single_base_nb_mean_idx_sum1 = np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True)
+        single_total_bb_RD_idx_sum_1 = np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True)
         
         tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(
-            np.sum(single_X[:,:,idx], axis=2, keepdims=True),
-            np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
+            single_X_idx_sum2, 
+            single_base_nb_mean_idx_sum1, 
             res["new_log_mu"],
             res["new_alphas"],
-            np.sum(single_total_bb_RD[:,idx], axis=1, keepdims=True), res["new_p_binom"], res["new_taus"]
+            single_total_bb_RD_idx_sum_1, 
+            res["new_p_binom"],
+            res["new_taus"]
         )
         
         for c in range(n_clones):
