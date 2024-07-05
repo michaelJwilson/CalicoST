@@ -39,9 +39,7 @@ def edge_update(n_clones, idx, values):
 
     return w_edge
 
-def solve_edges(i, adjacency_mat, new_assignment, n_clones):
-    new = False
-
+def solve_edges(i, adjacency_mat, new_assignment, n_clones, new=False):
     if new:
         neighbors = adjacency_mat[i,:].nonzero()[1]
         idx = np.where(new_assignment[neighbors] >= 0)[0]
