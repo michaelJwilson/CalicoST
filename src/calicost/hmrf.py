@@ -951,7 +951,7 @@ def hmrfmix_reassignment_posterior_concatenate(
 
         for c in range(n_clones):
             # TODO BUG? c dependence of kwargs? 
-            tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(
+            tmp_log_emission_rdr, tmp_log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix_v1(
                  np.sum(single_X[:,:,idx], axis=2, keepdims=True),
                  np.sum(single_base_nb_mean[:,idx], axis=1, keepdims=True),
                  res["new_log_mu"],
