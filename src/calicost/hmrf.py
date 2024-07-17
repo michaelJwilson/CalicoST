@@ -597,14 +597,15 @@ def hmrfmix_reassignment_posterior(
     n_obs = single_X.shape[0]
     n_clones = res["new_log_mu"].shape[1]
     n_states = res["new_p_binom"].shape[0]
+
     single_llf = np.zeros((N, n_clones))
+    posterior = np.zeros((N, n_clones))
+    
     new_assignment = copy.copy(prev_assignment)
 
     single_base_nb_mean_sum = np.sum(single_base_nb_mean)
     lambd = np.sum(single_base_nb_mean, axis=1) / single_base_nb_mean_sum
     
-    posterior = np.zeros((N, n_clones))
-
     # TODO UPNEXT vectorize over spots.
     for i in trange(N):
         idx = smooth_mat[i,:].nonzero()[1]
@@ -613,8 +614,10 @@ def hmrfmix_reassignment_posterior(
         for c in range(n_clones):
             if single_base_nb_mean_sum > 0:
                 this_pred_cnv = res["pred_cnv"][:,c]
-                logmu_shift = np.array( scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv,c] + np.log(lambd), axis=0) )
-                kwargs = {"logmu_shift":logmu_shift.reshape(1,1), "sample_length":np.array([n_obs])}
+                logmu_shift = np.array(
+                    scipy.special.logsumexp(res["new_log_mu"][this_pred_cnv, c] + np.log(lambd), axis=0)
+                )
+                kwargs = {"logmu_shift": logmu_shift.reshape(1,1), "sample_length": np.array([n_obs])}
             else:
                 kwargs = {}
                 
@@ -632,7 +635,7 @@ def hmrfmix_reassignment_posterior(
             
             if np.sum(single_base_nb_mean[:,idx] > 0) > 0 and np.sum(single_total_bb_RD[:,idx] > 0) > 0:
                 ratio_nonzeros = 1.0 * np.sum(single_total_bb_RD[:,i:(i+1)] > 0) / np.sum(single_base_nb_mean[:,i:(i+1)] > 0)
-                # ratio_nonzeros = 1.0 * np.sum(np.sum(single_total_bb_RD[:,idx], axis=1) > 0) / np.sum(np.sum(single_base_nb_mean[:,idx], axis=1) > 0)
+
                 single_llf[i,c] = ratio_nonzeros * np.sum( scipy.special.logsumexp(tmp_log_emission_rdr[:,:,0] + res["log_gamma"][:,:,c], axis=0) ) + \
                     np.sum( scipy.special.logsumexp(tmp_log_emission_baf[:,:,0] + res["log_gamma"][:,:,c], axis=0) )
             else:
