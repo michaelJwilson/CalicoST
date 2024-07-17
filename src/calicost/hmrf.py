@@ -929,9 +929,9 @@ def hmrfmix_reassignment_posterior_concatenate(
         kwargs = {"logmu_shift": logmu_shift, "sample_length": np.ones(n_clones, dtype=int) * n_obs}
     else:
         kwargs = {}
-    """
+    
     # TODO BUG? c dependence of kwargs? 
-    tmp_log_emission_rdr, tmp_log_emission_baf = hmrfmix_reassignment_posterior_concatenate_emission(
+    array_log_emission_rdr, array_log_emission_baf = hmrfmix_reassignment_posterior_concatenate_emission(
         single_X,
         single_base_nb_mean,
         single_total_bb_RD,
@@ -944,7 +944,9 @@ def hmrfmix_reassignment_posterior_concatenate(
         hmmclass,
         **kwargs
     )
-    """
+
+    print("solving for hmrfmix_reassignment_posterior_concatenate.")
+    
     for i in trange(N):
         idx = smooth_mat[i,:].nonzero()[1]
         idx = idx[~np.isnan(single_tumor_prop[idx])]
@@ -962,6 +964,9 @@ def hmrfmix_reassignment_posterior_concatenate(
                  np.ones((n_obs, 1)) * np.mean(single_tumor_prop[idx]),
                  **kwargs
             )
+
+            assert np.allclose(tmp_log_emission_rdr[:, :, 0], array_log_emission_rdr[:, :, i])
+            assert np.allclose(tmp_log_emission_baf[:, :, 0], array_log_emission_baf[:, :, i])
 
             # TODO tmp_log_emission_rdr[:, :, i] -> 0, etc.
             if np.sum(single_base_nb_mean[:,i:(i+1)] > 0) > 0 and np.sum(single_total_bb_RD[:,i:(i+1)] > 0) > 0:
