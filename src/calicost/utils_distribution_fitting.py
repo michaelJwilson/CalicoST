@@ -23,6 +23,7 @@ import os
 # os.environ["OPENBLAS_NUM_THREADS"] = "1"
 # os.environ["OMP_NUM_THREADS"] = "1"
 
+logger = logging.getLogger(__name__)
 
 def convert_params(mean, std):
     """
@@ -184,14 +185,24 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         self.exposure = exposure
         self.tumor_prop = tumor_prop
 
+        self.n_spots = len(self.tumor_prop)
+        self.n_states = exog.shape[1]
+        self.thread = self.n_spots > 15_000
+
+        self.tumor_shift = 0.5 * (1. - self.tumor_prop)
+        
+        logger.info(f"Fitting Weighted_BetaBinom_mix for {self.n_spots} spots and {self.n_states} states.")
+        
     @profile
     def nloglikeobs(self, params):
-        a = (self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
-        b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
+        a = (self.exog @ params[:-1] * self.tumor_prop + self.tumor_shift) * params[-1]
+        b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + self.tumor_shift) * params[-1]
 
-        # NB negative sum log likelihood.
-        # return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
-        return -calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b).dot(self.weights)
+        # NB negative sum log likelihood accounting for spin-up time of thread pool.
+        if self.thread:
+            return -calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b).dot(self.weights)
+        else:
+            return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")

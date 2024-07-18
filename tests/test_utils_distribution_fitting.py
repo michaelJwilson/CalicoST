@@ -142,7 +142,7 @@ def spatial_data():
 
 def test_Weighted_BetaBinom(benchmark):
     """
-    x2 speedup of Rust vs scipy.
+    2x speedup of Rust vs scipy.
     """
     np.random.seed(314)
     
@@ -178,9 +178,10 @@ def test_Weighted_BetaBinom(benchmark):
     assert np.allclose(exp, result)
     assert np.allclose(result, 199240.50086169314)
 
+
 def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
     """
-    x2 speedup of Rust vs scipy.
+    3.3x speedup of Rust vs scipy.
     """
     np.random.seed(314)
     
@@ -203,6 +204,7 @@ def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
 
     # TODO HACK match number of spots in run.
     n_spots = 5852
+
     single_tumor_prop = single_tumor_prop[:n_spots]
 
     nclass, len_exog = 7, n_spots
@@ -233,12 +235,8 @@ def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
     
     def call():
         return beta_binom.nloglikeobs(params)
-
-    aa = np.array([aa[ss] for ss in state])
-    bb = np.array([bb[ss] for ss in state])
     
-    exp = -scipy.stats.betabinom.logpmf(endog, exposure, aa, bb).dot(weights)
     result = benchmark(call)
 
-    # assert np.allclose(exp, result)
+    # NB regression test.
     assert np.allclose(result, 12_143.90731147436)
