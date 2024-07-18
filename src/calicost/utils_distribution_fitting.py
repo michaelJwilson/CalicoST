@@ -1,6 +1,7 @@
 import functools
 import inspect
 import logging
+import time
 import os
 
 import calicostem
@@ -206,33 +207,38 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
 
         self.tumor_shift = 0.5 * (1. - self.tumor_prop)
         self.nloglikeobs_zeropoint = -np.log(self.exposure + 1.) - betaln(self.exposure - self.endog + 1., self.endog  + 1.)
-        
-        logger.info(f"Fitting Weighted_BetaBinom_mix for {self.n_spots} spots and {self.n_states} states.")
-        
-    @profile
+                
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1] * self.tumor_prop + self.tumor_shift) * params[-1]
         b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + self.tumor_shift) * params[-1]
-
-        # NB negative sum log likelihood accounting for spin-up time of thread pool.
+        
         return -(self.nloglikeobs_zeropoint + betaln(self.endog + a, self.exposure - self.endog + b) - betaln(a, b)).dot(self.weights)
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")
+
+        logger.info(f"Fitting Weighted_BetaBinom_mix for {self.n_spots} spots and {self.n_states} states.")
         
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
+
+        start = time.time()
                 
-        return super(Weighted_BetaBinom_mix, self).fit(
+        result = super(Weighted_BetaBinom_mix, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
 
+        run_time = time.time() - start
+
+        logger.info(f"Fitted Weighted_BetaBinom_mix in {run_time:.3f} seconds.")
+        
+        return result
 
 class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
     def __init__(self, endog, exog, tau, weights, exposure, **kwds):

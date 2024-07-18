@@ -203,7 +203,7 @@ def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
     n_obs, n_comp, n_spots = single_X.shape
 
     # TODO HACK match number of spots in run.
-    n_spots = 5852
+    # n_spots = 5852
 
     single_tumor_prop = single_tumor_prop[:n_spots]
 
