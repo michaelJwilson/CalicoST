@@ -155,12 +155,10 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1]) * params[-1]
         b = self.exog @ (1. - params[:-1]) * params[-1]
-        
-        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
-        # llf = calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b)
-        
+
         # NB negative sum log likelihood.
-        return -llf.dot(self.weights)
+        # return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        return -calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b).dot(self.weights)
 
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append("tau")
