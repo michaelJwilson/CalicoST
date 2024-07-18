@@ -866,8 +866,17 @@ def update_transition_nophasing(log_xi, is_diag=False):
     return log_transmat
 
 @profile
-def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, alphas, \
-    start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
+def update_emission_params_nb_nophasing_uniqvalues(
+        unique_values,
+        mapping_matrices,
+        log_gamma,
+        alphas,
+        start_log_mu=None,
+        fix_NB_dispersion=False,
+        shared_NB_dispersion=False,
+        min_log_rdr=-2,
+        max_log_rdr=2
+):
     """
     Attributes
     ----------
@@ -883,9 +892,11 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
+    
     # initialization
     new_log_mu = copy.copy(start_log_mu) if not start_log_mu is None else np.zeros((n_states, n_spots))
     new_alphas = copy.copy(alphas)
+    
     # expression signal by NB distribution
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
@@ -925,6 +936,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
             weights = []
             features = []
             state_posweights = []
+            
             for s in range(n_spots):
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)

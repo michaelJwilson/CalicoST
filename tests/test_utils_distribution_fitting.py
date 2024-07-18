@@ -178,6 +178,62 @@ def test_Weighted_BetaBinom(benchmark):
     assert np.allclose(exp, result)
     assert np.allclose(result, 199240.50086169314)
 
+def test_Weighted_BetaBinom_mix_exp(benchmark, spatial_data):
+    """                                                                                                                                                                                                                   
+    3.3x speedup of Rust vs scipy.                                                                                                                                                                                        
+    """
+    np.random.seed(314)
+
+    (
+        kwargs,
+        res,
+        single_base_nb_mean,
+        single_tumor_prop,
+        single_X,
+        single_total_bb_RD,
+        smooth_mat,
+        hmm,
+        new_log_mu,
+        new_alphas,
+        new_p_binom,
+        new_taus,
+    ) = spatial_data
+
+    n_obs, n_comp, n_spots = single_X.shape
+
+    # TODO HACK match number of spots in run.                                                                                                                                                                             
+    # n_spots = 5852                                                                                                                                                                                                      
+    # single_tumor_prop = single_tumor_prop[:n_spots]                                                                                                                                                                      
+    nclass, len_exog = 7, n_spots
+
+    # NB construct pseduo counts (a,b) for each class.                                                                                                                                                                    
+    tau = 20.
+    ps = 0.5 + 0.2 * np.random.uniform(size=nclass)
+
+    aa = tau * ps
+    bb = tau * (1. - ps)
+
+    params = np.concatenate([ps, np.array([tau])])
+
+    assert len(params) == (nclass + 1)
+
+    # NB assign each spot to a class.                                                                                                                                                                                     
+    state = np.random.randint(low=0, high=nclass, size=len_exog)
+    exog = OneHotEncoder().fit_transform(state.reshape(-1, 1)).toarray()
+
+    assert exog.shape == (n_spots, nclass)
+
+    exposure = np.random.randint(low=10, high=25, size=len_exog)
+    endog = np.array([scipy.stats.betabinom.rvs(xp, aa[ss], bb[ss]) for ss, xp in zip(state, exposure)])
+
+    weights = 0.8 + 0.1 * np.random.uniform(size=len_exog)
+
+    beta_binom = Weighted_BetaBinom_mix(endog, exog, weights, exposure, single_tumor_prop)
+
+    def get_exp():
+        return beta_binom.nloglikeobs_v1(params)
+    
+    exp = benchmark(get_exp)
 
 def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
     """
@@ -202,9 +258,12 @@ def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
 
     n_obs, n_comp, n_spots = single_X.shape
 
+    
     # TODO HACK match number of spots in run.
-    # n_spots = 5852
-    # single_tumor_prop = single_tumor_prop[:n_spots]
+    # n_spots = 5_852
+    # n_spots = 10_000
+    
+    single_tumor_prop = single_tumor_prop[:n_spots]
 
     nclass, len_exog = 7, n_spots
 
@@ -231,12 +290,18 @@ def test_Weighted_BetaBinom_mix(benchmark, spatial_data):
     weights = 0.8 + 0.1 * np.random.uniform(size=len_exog)
     
     beta_binom = Weighted_BetaBinom_mix(endog, exog, weights, exposure, single_tumor_prop)
-    
-    def call():
-        return beta_binom.nloglikeobs(params)
-    
-    result = benchmark(call)
 
+    def get_exp():
+        return beta_binom.nloglikeobs_v1(params)
+    
+    def get_result():
+        return beta_binom.nloglikeobs(params)
+
+    exp = get_exp()
+    result = benchmark(get_result)
+
+    assert np.allclose(exp, result)
+    
     print(n_spots, result)
     
     # NB regression test.
