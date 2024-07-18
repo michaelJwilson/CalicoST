@@ -181,18 +181,13 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, weights, exposure, tumor_prop, **kwds):
         super(Weighted_BetaBinom_mix, self).__init__(endog, exog, **kwds)
-
-        self.endog = endog.astype(float)
         
         self.weights = weights
-        self.exposure = exposure.astype(float)
         self.tumor_prop = tumor_prop
 
-        self.n_spots = len(self.tumor_prop)
+        self.n_spots = len(tumor_prop)
         self.n_states = exog.shape[1]
 
-        # TODO self.n_spots > 15_000
-        self.thread = False
         self.tumor_shift = 0.5 * (1. - self.tumor_prop)
         self.nloglikeobs_zeropoint = -np.log(self.exposure + 1.) - betaln(self.exposure - self.endog + 1., self.endog  + 1.)
         
@@ -204,8 +199,7 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + self.tumor_shift) * params[-1]
 
         # NB negative sum log likelihood accounting for spin-up time of thread pool.
-        # return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
-        return -calicostem.bb_ab(self.endog, self.exposure, a, b, self.nloglikeobs_zeropoint).dot(self.weights)
+        return -(self.nloglikeobs_zeropoint + betaln(self.endog + a, self.exposure - self.endog + b) - betaln(a, b)).dot(self.weights)
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")
