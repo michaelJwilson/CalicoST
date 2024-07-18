@@ -187,8 +187,9 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
 
         self.n_spots = len(self.tumor_prop)
         self.n_states = exog.shape[1]
-        self.thread = self.n_spots > 15_000
 
+        # TODO self.n_spots > 15_000
+        self.thread = False
         self.tumor_shift = 0.5 * (1. - self.tumor_prop)
         
         logger.info(f"Fitting Weighted_BetaBinom_mix for {self.n_spots} spots and {self.n_states} states.")
