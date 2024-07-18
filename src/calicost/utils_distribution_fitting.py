@@ -114,18 +114,15 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
         self.n_states = exog.shape[1]
 
         # self.nloglikeobs_zeropoint = self.exposure * (1. - self.tumor_prop)   
-        
-        logger.info(f"Fitting Weighted_NegativeBinomial_mix for {self.n_spots} spots and {self.n_states} states.")
-        
-    @profile
+                
     def nloglikeobs(self, params):
         nb_mean = self.exposure * (self.tumor_prop * (self.exog @ np.exp(params[:-1])) + 1. - self.tumor_prop)
         nb_var = nb_mean + params[-1] * nb_mean**2
         
         n, p = convert_params_var(nb_mean, nb_var)
 
-        # return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
-        return -calicostem.nb(self.endog.astype(float), n.astype(float), p).dot(self.weights)
+        return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
+        # return -calicostem.nb(self.endog.astype(float), n.astype(float), p).dot(self.weights)
     
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append('alpha')
@@ -135,14 +132,23 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
                 start_params = self.start_params
             else:
                 start_params = np.append(0.1 * np.ones(self.nparams), 0.01)
-                
-        return super(Weighted_NegativeBinomial_mix, self).fit(
+
+        logger.info(f"Fitting Weighted_NegativeBinomial_mix for {self.n_spots} spots and {self.n_states} states.")
+
+        start = time.time()
+        
+        result = super(Weighted_NegativeBinomial_mix, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
 
+        run_time = time.time() - start
+
+        logger.info(f"Fitted Weighted_NegativeBinomial_mix in {run_time:.3f} seconds.")
+
+        return result
 
 class Weighted_BetaBinom(GenericLikelihoodModel):
     """
