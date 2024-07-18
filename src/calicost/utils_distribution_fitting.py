@@ -211,7 +211,8 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1] * self.tumor_prop + self.tumor_shift) * params[-1]
         b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + self.tumor_shift) * params[-1]
-        
+
+        # return -(scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)).dot(self.weights)
         return -(self.nloglikeobs_zeropoint + betaln(self.endog + a, self.exposure - self.endog + b) - betaln(a, b)).dot(self.weights)
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
