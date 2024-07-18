@@ -1,22 +1,23 @@
 import functools
 import inspect
 import logging
+import os
 
+import calicostem
 import numpy as np
 import scipy
-from scipy import linalg, special
-from scipy.special import logsumexp, loggamma
 import scipy.integrate
 import scipy.stats
-from numba import jit, njit
-from sklearn import cluster
-from sklearn.utils import check_random_state
 import statsmodels
 import statsmodels.api as sm
+from numba import jit, njit
+from scipy import linalg, special
+from scipy.special import betaln, loggamma, logsumexp
+from sklearn import cluster
+from sklearn.utils import check_random_state
 from statsmodels.base.model import GenericLikelihoodModel
+
 from calicost.utils_profiling import profile
-import calicostem
-import os
 
 # DEPRECATE
 # os.environ["MKL_NUM_THREADS"] = "1"
@@ -180,9 +181,11 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, weights, exposure, tumor_prop, **kwds):
         super(Weighted_BetaBinom_mix, self).__init__(endog, exog, **kwds)
+
+        self.endog = endog.astype(float)
         
         self.weights = weights
-        self.exposure = exposure
+        self.exposure = exposure.astype(float)
         self.tumor_prop = tumor_prop
 
         self.n_spots = len(self.tumor_prop)
@@ -191,6 +194,7 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         # TODO self.n_spots > 15_000
         self.thread = False
         self.tumor_shift = 0.5 * (1. - self.tumor_prop)
+        self.nloglikeobs_zeropoint = -np.log(self.exposure + 1.) - betaln(self.exposure - self.endog + 1., self.endog  + 1.)
         
         logger.info(f"Fitting Weighted_BetaBinom_mix for {self.n_spots} spots and {self.n_states} states.")
         
@@ -200,10 +204,8 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         b = ((self.exog @ (1. - params[:-1])) * self.tumor_prop + self.tumor_shift) * params[-1]
 
         # NB negative sum log likelihood accounting for spin-up time of thread pool.
-        if self.thread:
-            return -calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b).dot(self.weights)
-        else:
-            return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        # return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        return -calicostem.bb_ab(self.endog, self.exposure, a, b, self.nloglikeobs_zeropoint).dot(self.weights)
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")
