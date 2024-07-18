@@ -22,6 +22,7 @@ from calicost.utils_profiling import profile
 import warnings
 from statsmodels.tools.sm_exceptions import ValueWarning
 
+logger = logging.getLogger(__name__)
 
 ############################################################
 # Pure clone
@@ -33,10 +34,13 @@ def hmrf_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_R
     n_obs = single_X.shape[0]
     n_clones = res["new_log_mu"].shape[1]
     n_states = res["new_p_binom"].shape[0]
+
     single_llf = np.zeros((N, n_clones))
-    new_assignment = copy.copy(prev_assignment)
-    #
     posterior = np.zeros((N, n_clones))
+    
+    new_assignment = copy.copy(prev_assignment)
+    
+    logger.info("Solving for hmrf_reassignment_posterior.")
 
     for i in trange(N):
         idx = smooth_mat[i,:].nonzero()[1]
