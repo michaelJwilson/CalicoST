@@ -5,8 +5,8 @@ channels:
   - defaults
 dependencies:
   - python==3.10
-  - samtools==1.18
-  - bcftools==1.18
-  - cellsnp-lite
-  - snakemake
-  - lemon
+  # - samtools==1.18
+  # - bcftools==1.18
+  # - cellsnp-lite
+  # - snakemake
+  # - lemon
