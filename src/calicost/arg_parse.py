@@ -40,8 +40,9 @@ def load_default_config():
         "min_spots_per_clone" : 100,
         "min_avgumi_per_clone" : 10,
         "maxspots_pooling" : 7,
-        "tumorprop_threshold" : 0.5, 
-        "max_iter_outer" : 20,
+        "tumorprop_threshold" : 0.5,
+        "max_iter_outer_initial" : 20,
+        "max_iter_outer" : 10,
         "nodepotential" : "weighted_sum", # max or weighted_sum
         "initialization_method" : "rectangle", # rectangle or datadrive
         "num_hmrf_initialization_start" : 0, 
@@ -100,7 +101,8 @@ def load_default_config():
         "min_spots_per_clone" : "int",
         "min_avgumi_per_clone" : "int",
         "maxspots_pooling" : "int",
-        "tumorprop_threshold" : "float", 
+        "tumorprop_threshold" : "float",
+        "max_iter_outer_initial" : "int",
         "max_iter_outer" : "int",
         "nodepotential" : "str",
         "initialization_method" : "str",
@@ -132,7 +134,7 @@ def load_default_config():
     category_elements = [["input_filelist", "spaceranger_dir", "snp_dir", "output_dir"], \
                          ["geneticmap_file", "hgtable_file", "normalidx_file", "tumorprop_file", "alignment_files", "supervision_clone_file", "filtergenelist_file", "filterregion_file", "secondary_min_umi", "min_snpumi_perspot", "min_percent_expressed_spots", "bafonly"], \
                          ["nu", "logphase_shift", "npart_phasing"], \
-                         ["n_clones", "n_clones_rdr", "min_spots_per_clone", "min_avgumi_per_clone", "maxspots_pooling", "tumorprop_threshold",  "max_iter_outer", "nodepotential", "initialization_method", "num_hmrf_initialization_start",  "num_hmrf_initialization_end", "spatial_weight", "construct_adjacency_method", "construct_adjacency_w"], \
+                         ["n_clones", "n_clones_rdr", "min_spots_per_clone", "min_avgumi_per_clone", "maxspots_pooling", "tumorprop_threshold",  "max_iter_outer_initial", "max_iter_outer", "nodepotential", "initialization_method", "num_hmrf_initialization_start",  "num_hmrf_initialization_end", "spatial_weight", "construct_adjacency_method", "construct_adjacency_w"], \
                          ["n_states", "params", "t", "t_phaseing", "fix_NB_dispersion", "shared_NB_dispersion", "fix_BB_dispersion", "shared_BB_dispersion", "max_iter", "tol", "gmm_random_state", "np_threshold", "np_eventminlen"], \
                          ["nonbalance_bafdist", "nondiploid_rdrdist"]]
     return config_shared, config_joint, config_single, argtype_shared, argtype_joint, argtype_single, category_names, category_elements
