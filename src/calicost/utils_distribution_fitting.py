@@ -192,25 +192,30 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         # exp = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
         
         # NB 21.00s
-        # result = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        if self.version == "legacy":
+            result = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
 
         # NB  6.54s
         # result = -parallel_beta_binomial(self.endog, self.exposure, a, b, self.weights)
 
-        # NB  4.11s 
-        result = self.loglike_zeropoint - parallel_beta_binomial_zeropoint(self.endog, self.exposure, a, b, self.weights)
+        # NB  4.11s
+        else:
+            result = self.loglike_zeropoint - parallel_beta_binomial_zeropoint(self.endog, self.exposure, a, b, self.weights)
+            
         """
         try:
             assert np.allclose(exp, result, atol=1.0e-6, equal_nan=True)
         except:
             breakpoint()
         """
+        
         return result
         
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         self.exog_names.append("tau")
+        self.version = "legacy"
 
-        logger.info(f"Fitting Weighted_BetaBinom_mix for {len(self.exposure)} spots.")
+        logger.info(f"Fitting legacy Weighted_BetaBinom_mix for {len(self.exposure)} spots.")
 
         start = time.time()
         
@@ -220,7 +225,7 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
                 
-        result = super(Weighted_BetaBinom_mix, self).fit(
+        exp = super(Weighted_BetaBinom_mix, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
@@ -229,9 +234,34 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
 
         run_time = time.time() - start
         
+        logger.info(f"Fitted legacy Weighted_BetaBinom_mix for {len(self.exposure)} spots in {run_time}s.")
+
+        self.version = "release"
+        
+        logger.info(f"Fitting Weighted_BetaBinom_mix for {len(self.exposure)} spots.")
+
+        start = time.time()
+
+        if start_params is None:
+            if hasattr(self, 'start_params'):
+                start_params = self.start_params
+            else:
+                start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
+
+        result = super(Weighted_BetaBinom_mix, self).fit(
+            start_params=start_params,
+            maxiter=maxiter,
+            maxfun=maxfun,
+            **kwds
+        )
+
+        run_time = time.time() - start
+
         logger.info(f"Fitted Weighted_BetaBinom_mix for {len(self.exposure)} spots in {run_time}s.")
 
         # breakpoint()
+
+        assert np.allclose(exp.params, result.params, atol=1.e-6, equal_nan=True)
         
         return result
         
