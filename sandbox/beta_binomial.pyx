@@ -1,7 +1,7 @@
 from libc.math cimport fabs
 cimport cython
 from cython.parallel cimport prange
-from libc.math cimport log
+from libc.math cimport log, NAN
 
 import numpy as np
 import scipy.special as sc
@@ -38,6 +38,11 @@ def parallel_G(k, x, y):
     
     return out
 
+def get_available_threads():
+    cdef int available_threads = omp_get_max_threads()
+
+    return available_threads
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef void _parallel_beta_binomial(
@@ -45,32 +50,61 @@ cdef void _parallel_beta_binomial(
     double[:] n,
     double[:] a,
     double[:] b,
-    double[:] out
+    double[:] w,
+    double[:] out,
+    int nthreads
 ) nogil:
-  cdef int chunk, j, chunk_size, length, idx
+  cdef int length, idx
   
   length = len(k)
-  chunk_size = 256
 
-  for chunk in prange(0, length + chunk_size, chunk_size):
-      for j in range(chunk_size):
-          idx = j + chunk
+  for idx in prange(0, length, schedule="guided"):      
+      if a[idx] <= 0.0:
+          out[idx] = NAN
+	      
+      elif b[idx] <= 0.0:
+          out[idx] = NAN
+	      
+      else:
+          out[idx] = w[idx] * (-log(n[idx] + 1.) - csc.betaln(n[idx] - k[idx] + 1., k[idx] + 1.) - csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
 
-          if idx >= length:
-              break
+def parallel_beta_binomial(k, n, a, b, w):
+    out = np.zeros_like(a, dtype="float")
+    nthreads = get_available_threads()
 
-	  # NB -(n + 1.).ln() - get_lnbeta(n - k + 1., k + 1.) - get_lnbeta(a, b) + get_lnbeta(k + a, n - k + b)
-          out[idx] = -log(n[idx] + 1.) - csc.betaln(n[idx] - k[idx] + 1., k[idx] + 1.) - csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx])
+    _parallel_beta_binomial(k, n, a, b, w, out, nthreads)
 
-def print_available_threads():
-    cdef int available_threads = omp_get_max_threads()    
-    print("Available threads:", available_threads)
+    return out.sum()
 
-def parallel_beta_binomial(k, n, a, b):
-    out = np.zeros_like(a, dtype='double')
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void _parallel_beta_binomial_zeropoint(
+    double[:] k,
+    double[:] n,
+    double[:] a,
+    double[:] b,
+    double[:] w,
+    double[:] out,
+    int nthreads
+) nogil:
+  cdef int length, idx
 
-    print_available_threads()
+  length = len(k)
 
-    _parallel_beta_binomial(k, n, a, b, out)
+  for idx in prange(0, length, schedule="guided"):
+      if a[idx] <= 0.0:
+          out[idx] = NAN
 
-    return out
+      elif b[idx] <= 0.0:
+          out[idx] = NAN
+
+      else:
+          out[idx] = w[idx] * (-csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
+
+def parallel_beta_binomial_zeropoint(k, n, a, b, w):
+    out = np.zeros_like(a, dtype="float")
+    nthreads = get_available_threads()
+
+    _parallel_beta_binomial_zeropoint(k, n, a, b, w, out, nthreads)
+
+    return out.sum()
