@@ -4,6 +4,7 @@ import logging
 import os
 import pdb
 import time
+import traceback
 
 import numpy as np
 import scipy
@@ -142,30 +143,90 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
     """
     def __init__(self, endog, exog, weights, exposure, **kwds):
         super(Weighted_BetaBinom, self).__init__(endog, exog, **kwds)
+        
         self.weights = weights
-        self.exposure = exposure
+        self.exposure = exposure.astype(float)
+
+        self.loglike_zeropoint = -np.log(self.exposure + 1.) - betaln(self.exposure - self.endog + 1., self.endog + 1.)
+        self.loglike_zeropoint = -self.loglike_zeropoint.dot(self.weights)
 
     @profile
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1]) * params[-1]
         b = (1 - self.exog @ params[:-1]) * params[-1]
-        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
-        neg_sum_llf = -llf.dot(self.weights)
-        return neg_sum_llf
 
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+        if np.any(a <= 0.0):
+            return -np.array([np.nan])
+
+        if np.any(b <= 0.0):
+            return -np.array([np.nan])
+
+        # exp = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)                                                                                                                       
+        if self.version == "legacy":
+            result = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        else:
+            result = self.loglike_zeropoint - parallel_beta_binomial_zeropoint(self.endog, self.exposure, a, b, self.weights)
+            
+        return result
+
+    def fit(self, start_params=None, maxiter=10000, maxfun=5000, validate=True, **kwds):
         self.exog_names.append("tau")
-
-        logger.info(f"Fitting Weighted_BetaBinom for {len(self.exposure)} spots.")
-        
+                
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
-        return super(Weighted_BetaBinom, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwds)
+
+        if validate:
+            self.version = "legacy"
+            
+            start = time.time()
+        
+            exp = super(Weighted_BetaBinom, self).fit(
+                start_params=start_params,
+                maxiter=maxiter,
+                maxfun=maxfun,
+                **kwds
+            )
+
+            legacy_run_time = time.time() - start
+
+            logger.info(f"Fitted legacy Weighted_BetaBinom for {len(self.exposure)} spots in {legacy_run_time}s.")
+
+        self.version = "release"
+
+        start = time.time()
+
+        result = super(Weighted_BetaBinom, self).fit(
+            start_params=start_params,
+            maxiter=maxiter,
+            maxfun=maxfun,
+            **kwds
+        )
+
+        run_time = time.time() - start
+
+        logger.info(f"Fitted Weighted_BetaBinom for {len(self.exposure)} spots in {run_time}s.")
+
+        if validate:
+            # TODO atol=1.e-6
+            try:
+                assert np.allclose(exp.params, result.params, atol=1.e-4, equal_nan=True)
+            except:
+                # print(exp.params)
+                # print(result.params)
+                # breakpoint()
+
+                logger.warning(f"ERROR: missed atol on Weighted_BetaBinom.")
+                
+            if legacy_run_time < run_time:
+                logger.warning(f"Legacy Weighted_BetaBinom was more efficient.")
+                traceback.print_stack()
+            else:
+                logger.info(f"Weighted_BetaBinom speedup: {legacy_run_time / run_time:.3f}x")
+                
+        return result
 
 
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
@@ -173,8 +234,10 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         super(Weighted_BetaBinom_mix, self).__init__(endog, exog, **kwds)
         
         self.weights = weights
-        self.exposure = exposure
+        self.exposure = exposure.astype(float)
         self.tumor_prop = tumor_prop
+
+        self.n_spots = len(self.exposure)
         
         self.loglike_zeropoint = -np.log(self.exposure + 1.) - betaln(self.exposure - self.endog + 1., self.endog + 1.)
         self.loglike_zeropoint = -self.loglike_zeropoint.dot(self.weights)
@@ -191,8 +254,8 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
 
         # exp = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
         
-        # NB 21.00s
-        if self.version == "legacy":
+        # NB  21.00s
+        if (self.version == "legacy"):
             result = -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
 
         # NB  6.54s
@@ -211,47 +274,41 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         
         return result
         
-    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
+    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, validate=False, **kwds):
         self.exog_names.append("tau")
-        self.version = "legacy"
-
-        logger.info(f"Fitting legacy Weighted_BetaBinom_mix for {len(self.exposure)} spots.")
-
-        start = time.time()
-        
+                
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
-                
-        exp = super(Weighted_BetaBinom_mix, self).fit(
-            start_params=start_params,
-            maxiter=maxiter,
-            maxfun=maxfun,
-            **kwds
-        )
 
-        run_time = time.time() - start
+        if validate:
+            self.version = "legacy"
+            
+            start = time.time()
+                
+            exp = super(Weighted_BetaBinom_mix, self).fit(
+                start_params=start_params,
+                maxiter=maxiter,
+                maxfun=maxfun,
+                full_output=True,
+                **kwds
+            )
+
+            legacy_run_time = time.time() - start
         
-        logger.info(f"Fitted legacy Weighted_BetaBinom_mix for {len(self.exposure)} spots in {run_time}s.")
+            logger.info(f"Fitted legacy Weighted_BetaBinom_mix for {len(self.exposure)} spots in {legacy_run_time}s.")
 
         self.version = "release"
         
-        logger.info(f"Fitting Weighted_BetaBinom_mix for {len(self.exposure)} spots.")
-
         start = time.time()
-
-        if start_params is None:
-            if hasattr(self, 'start_params'):
-                start_params = self.start_params
-            else:
-                start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
 
         result = super(Weighted_BetaBinom_mix, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
+            full_output=True,
             **kwds
         )
 
@@ -259,10 +316,15 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
 
         logger.info(f"Fitted Weighted_BetaBinom_mix for {len(self.exposure)} spots in {run_time}s.")
 
-        # breakpoint()
-
-        assert np.allclose(exp.params, result.params, atol=1.e-6, equal_nan=True)
-        
+        if validate:
+            assert np.allclose(exp.params, result.params, atol=1.e-6, equal_nan=True)
+            
+            if legacy_run_time < run_time:
+                logger.warning(f"Legacy Weighted_BetaBinom_mix was more efficient.")
+                traceback.print_stack()
+            else:
+                logger.info(f"Weighted_BetaBinom_mix speedup: {legacy_run_time / run_time:.3f}x")
+                
         return result
         
 

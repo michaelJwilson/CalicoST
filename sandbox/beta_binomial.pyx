@@ -4,6 +4,7 @@ from cython.parallel cimport prange
 from libc.math cimport log, NAN
 
 import numpy as np
+cimport numpy as np
 import scipy.special as sc
 cimport scipy.special.cython_special as csc
 
@@ -52,27 +53,28 @@ cdef void _parallel_beta_binomial(
     double[:] b,
     double[:] w,
     double[:] out,
-    int nthreads
-) nogil:
-  cdef int length, idx
+):
+  cdef unsigned int length, idx
   
   length = len(k)
 
-  for idx in prange(0, length, schedule="guided"):      
-      if a[idx] <= 0.0:
-          out[idx] = NAN
+  cdef unsigned int max_threads = omp_get_max_threads()
+
+  with nogil:
+      for idx in prange(0, length, schedule="guided"):      
+          if a[idx] <= 0.0:
+              out[idx] = NAN
 	      
-      elif b[idx] <= 0.0:
-          out[idx] = NAN
+          elif b[idx] <= 0.0:
+              out[idx] = NAN
 	      
-      else:
-          out[idx] = w[idx] * (-log(n[idx] + 1.) - csc.betaln(n[idx] - k[idx] + 1., k[idx] + 1.) - csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
+          else:
+              out[idx] = w[idx] * (-log(n[idx] + 1.) - csc.betaln(n[idx] - k[idx] + 1., k[idx] + 1.) - csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
 
 def parallel_beta_binomial(k, n, a, b, w):
-    out = np.zeros_like(a, dtype="float")
-    nthreads = get_available_threads()
+    out = np.empty(len(k), dtype=np.float64)
 
-    _parallel_beta_binomial(k, n, a, b, w, out, nthreads)
+    _parallel_beta_binomial(k, n, a, b, w, out)
 
     return out.sum()
 
@@ -85,26 +87,30 @@ cdef void _parallel_beta_binomial_zeropoint(
     double[:] b,
     double[:] w,
     double[:] out,
-    int nthreads
+    int max_threads
 ) nogil:
-  cdef int length, idx
+  cdef unsigned int length, idx
+  cdef unsigned num_threads
 
   length = len(k)
 
-  for idx in prange(0, length, schedule="guided"):
+  if length > 30_000:
+      num_threads = max_threads
+  else:
+      num_threads = 1
+
+  for idx in prange(0, length, schedule="guided", num_threads=num_threads):
       if a[idx] <= 0.0:
           out[idx] = NAN
-
       elif b[idx] <= 0.0:
           out[idx] = NAN
-
       else:
           out[idx] = w[idx] * (-csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
 
 def parallel_beta_binomial_zeropoint(k, n, a, b, w):
-    out = np.zeros_like(a, dtype="float")
-    nthreads = get_available_threads()
+    out = np.empty_like(a, dtype=np.float64)
+    max_threads = get_available_threads()
 
-    _parallel_beta_binomial_zeropoint(k, n, a, b, w, out, nthreads)
+    _parallel_beta_binomial_zeropoint(k, n, a, b, w, out, max_threads)
 
     return out.sum()
