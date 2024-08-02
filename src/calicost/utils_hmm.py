@@ -734,21 +734,29 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_mat
                 tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
-                    # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
+                    # optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state).
                     if np.sum(tmp[i,idx_nonzero]) + np.sum(tmp[i+n_states,idx_nonzero]) >= 0.1:
                         this_tp = (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero]
+                        
                         assert np.all(this_tp < 1+1e-4)
-                        model = Weighted_BetaBinom_mix(np.append(unique_values[s][idx_nonzero,0], unique_values[s][idx_nonzero,1]-unique_values[s][idx_nonzero,0]), \
-                            np.ones(2*len(idx_nonzero)).reshape(-1,1), \
-                            weights=np.append(tmp[i,idx_nonzero], tmp[i+n_states,idx_nonzero]), \
-                            exposure=np.append(unique_values[s][idx_nonzero,1], unique_values[s][idx_nonzero,1]),\
-                            tumor_prop=this_tp)
-                            # tumor_prop=tumor_prop )
+
+                        # tumor_prop=tumor_prop
+                        model = Weighted_BetaBinom_mix(
+                            np.append(unique_values[s][idx_nonzero,0], unique_values[s][idx_nonzero,1]-unique_values[s][idx_nonzero,0]),
+                            np.ones(2*len(idx_nonzero)).reshape(-1,1),
+                            weights=np.append(tmp[i,idx_nonzero], tmp[i+n_states,idx_nonzero]),
+                            exposure=np.append(unique_values[s][idx_nonzero,1], unique_values[s][idx_nonzero,1]),
+                            tumor_prop=this_tp
+                        )
+                          
                         res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
+                        
                         new_p_binom[i, s] = res.params[0]
                         new_taus[i, s] = res.params[-1]
+                        
                         if not (start_p_binom is None):
                             res2 = model.fit(disp=0, maxiter=1500, start_params=np.append([start_p_binom[i, s]], [taus[i, s]]), xtol=1e-4, ftol=1e-4)
+                            
                             new_p_binom[i, s] = res.params[0] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[0]
                             new_taus[i, s] = res.params[-1] if model.nloglikeobs(res.params) < model.nloglikeobs(res2.params) else res2.params[-1]
         else:

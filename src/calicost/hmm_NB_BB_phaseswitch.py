@@ -226,7 +226,7 @@ class hmm_sitewise(object):
                     log_beta[i, (cumlen + t)] = mylogsumexp(buf)
             cumlen += le
         return log_beta
-    #
+    
     def run_baum_welch_nb_bb(self, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop=None, \
         fix_NB_dispersion=False, shared_NB_dispersion=False, fix_BB_dispersion=False, shared_BB_dispersion=False, \
         is_diag=False, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None, max_iter=100, tol=1e-4):
