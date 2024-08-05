@@ -107,9 +107,10 @@ class Weighted_NegativeBinomial_mix(GenericLikelihoodModel):
         return super(Weighted_NegativeBinomial_mix, self).fit(start_params=start_params,
                                                maxiter=maxiter, maxfun=maxfun,
                                                **kwds)
+
 class Weighted_Binom(GenericLikelihoodModel):
     """
-    See Weighted_BetaBinom
+    See Weighted_BetaBinom; REFACTOR binomial.
     """
     def __init__(self, endog, exog, weights, exposure, **kwds):
         super(Weighted_Binom, self).__init__(endog, exog, **kwds)
@@ -136,12 +137,15 @@ class Weighted_Binom(GenericLikelihoodModel):
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
                 
-        return super(Weighted_BetaBinom, self).fit(
+        result = super(Weighted_BetaBinom, self).fit(
             start_params=start_params[:-1],
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
+
+        # TODO update result.params to include NAN tau.
+        return result
 
 class Weighted_BetaBinom(GenericLikelihoodModel):
     """
@@ -163,6 +167,7 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         Total number of trials. In BAF case, this is the total number of SNP-covering UMIs.
     """
     def __init__(self, endog, exog, weights, exposure, no_dispersion=True, **kwds):
+        # REFACTOR binomial.
         if no_dispersion:
             self = Weighted_Binom(endog, exog, weights, exposure, **kwds)
         else:
@@ -195,6 +200,9 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         )
 
 class Weighted_Binom_mix(GenericLikelihoodModel):
+    """
+    See Weighted_BetaBinom_mix; REFACTOR binomial.
+    """
     def __init__(self, endog, exog, weights, exposure, tumor_prop, **kwds):
         super(Weighted_Binom_mix, self).__init__(endog, exog, **kwds)
 
@@ -217,16 +225,20 @@ class Weighted_Binom_mix(GenericLikelihoodModel):
             else:
                 start_params = np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
 
-        return super(Weighted_Binom_mix, self).fit(
+        result = super(Weighted_Binom_mix, self).fit(
             start_params=start_params[:-1],
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
 
+        # TODO update result.params to include NAN tau.
+        return result
+
 
 class Weighted_BetaBinom_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, weights, exposure, tumor_prop, no_dispersion=True, **kwds):
+        # REFACTOR binomial.
         if no_dispersion:
             self = Weighted_Binom_mix(endog, exog, weights, exposure, tumor_prop, **kwds)
         else:
@@ -260,6 +272,9 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         )
 
 class Weighted_Binom_fixdispersion(GenericLikelihoodModel):
+    """
+    See Weighted_BetaBinom_fixdispersion; REFACTOR binomial.
+    """
     def __init__(self, endog, exog, tau, weights, exposure, **kwds):
         super(Weighted_Binom_fixdispersion, self).__init__(endog, exog, **kwds)
 
@@ -284,15 +299,19 @@ class Weighted_Binom_fixdispersion(GenericLikelihoodModel):
             else:
                 start_params = 0.1 * np.ones(self.nparams)
         
-        return super(Weighted_BetaBinom_fixdispersion, self).fit(
+        result = super(Weighted_BetaBinom_fixdispersion, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
 
+        # TODO update result.params to include NAN tau.
+        return result
+
 class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
     def __init__(self, endog, exog, tau, weights, exposure, no_dispersion=True, **kwds):
+        # REFACTOR binomial.
         if no_dispersion:
             self = Weighted_Binom_fixdispersion(endog, exog, tau, weights, exposure, **kwds)
         else:
@@ -306,11 +325,10 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         a = (self.exog @ params) * self.tau
         b = (1 - self.exog @ params) * self.tau
-        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
-        neg_sum_llf = -llf.dot(self.weights)
-        return neg_sum_llf
 
-    def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+        return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+
+    def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
         if start_params is None:
             if hasattr(self, 'start_params'):
                 start_params = self.start_params
@@ -325,6 +343,9 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
         )
 
 class Weighted_Binom_fixdispersion_mix(GenericLikelihoodModel):
+    """
+    See Weighted_BetaBinom_fixdispersion_mix; REFACTOR binomial.
+    """
     def __init__(self, endog, exog, weights, exposure, tumor_prop, no_dispersion=True, **kwds):
             super(Weighted_Binom_fixdispersion_mix, self).__init__(endog, exog, **kwds)
 
@@ -345,15 +366,20 @@ class Weighted_Binom_fixdispersion_mix(GenericLikelihoodModel):
             else:
                 start_params = 0.1 * np.ones(self.nparams)
         
-        return super(Weighted_BetaBinom_fixdispersion_mix, self).fit(
+        result = super(Weighted_BetaBinom_fixdispersion_mix, self).fit(
             start_params=start_params,
             maxiter=maxiter,
             maxfun=maxfun,
             **kwds
         )
 
+        # TODO update result.params to include NAN tau.
+        return result
+        
+
 class Weighted_BetaBinom_fixdispersion_mix(GenericLikelihoodModel):
     def __init__(self, endog, exog, tau, weights, exposure, tumor_prop, no_dispersion=True, **kwds):
+        # REFACTOR binomial.
         if no_dispersion:
             self = Weighted_Binom_fixdispersion_mix(endog, exog, weights, exposure, tumor_prop, **kwds)
         else:
@@ -368,6 +394,7 @@ class Weighted_BetaBinom_fixdispersion_mix(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         a = (self.exog @ params * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau
         b = ((1 - self.exog @ params) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau
+
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
     
     def fit(self, start_params=None, maxiter=10_000, maxfun=5_000, **kwds):
@@ -413,9 +440,8 @@ class BAF_Binom(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         linear_term = self.exog @ params
         p = self.scaling / (1 + np.exp(-linear_term + self.offset))
-        llf = scipy.stats.binom.logpmf(self.endog, self.exposure, p)
-        neg_sum_llf = -llf.dot(self.weights)
-        return neg_sum_llf
+
+        return -scipy.stats.binom.logpmf(self.endog, self.exposure, p).dot(self.weights)
     
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         if start_params is None:
@@ -423,6 +449,10 @@ class BAF_Binom(GenericLikelihoodModel):
                 start_params = self.start_params
             else:
                 start_params = 0.5 / np.sum(self.exog.shape[1]) *  np.ones(self.nparams)
-        return super(BAF_Binom, self).fit(start_params=start_params,
-                                               maxiter=maxiter, maxfun=maxfun,
-                                               **kwds)
+
+        return super(BAF_Binom, self).fit(
+            start_params=start_params,
+            maxiter=maxiter,
+            maxfun=maxfun,
+            **kwds
+        )
