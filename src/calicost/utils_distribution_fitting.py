@@ -144,7 +144,8 @@ class Weighted_Binom(GenericLikelihoodModel):
             **kwds
         )
 
-        # TODO update result.params to include NAN tau.
+        result.params = np.concatenate([result.params, [np.nan]])
+
         return result
 
 class Weighted_BetaBinom(GenericLikelihoodModel):
@@ -232,7 +233,8 @@ class Weighted_Binom_mix(GenericLikelihoodModel):
             **kwds
         )
 
-        # TODO update result.params to include NAN tau.
+        result.params = np.concatenate([result.params, [np.nan]])
+        
         return result
 
 
