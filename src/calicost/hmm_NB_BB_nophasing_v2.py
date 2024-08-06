@@ -89,7 +89,7 @@ class hmm_nophasing_v2(object):
                 idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
                 if len(idx_nonzero_baf) > 0:
                     # 
-                    #  REFACTOR binomial; see https://en.wikipedia.org/wiki/Beta-binomial_distribution
+                    #  REMODEL binomial; see https://en.wikipedia.org/wiki/Beta-binomial_distribution
                     # 
                     # log_emission_baf[i, idx_nonzero_baf, s] = scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], p_binom[i, s] * taus[i, s], (1-p_binom[i, s]) * taus[i, s])
                     # 
@@ -159,9 +159,9 @@ class hmm_nophasing_v2(object):
                 idx_nonzero_baf = np.where(total_bb_RD[:,s] > 0)[0]
                 if len(idx_nonzero_baf) > 0:
                     mix_p_A = p_binom[i, s] * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
-                    mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
-
-                    # REFATCOR binomial; see https://en.wikipedia.org/wiki/Beta-binomial_distribution
+                    # mix_p_B = (1 - p_binom[i, s]) * this_weighted_tp[idx_nonzero_baf] + 0.5 * (1 - this_weighted_tp[idx_nonzero_baf])
+                    # 
+                    # REMODEL binomial; see https://en.wikipedia.org/wiki/Beta-binomial_distribution
                     #
                     # log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.binom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A)
