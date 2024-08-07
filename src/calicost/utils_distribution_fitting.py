@@ -17,10 +17,9 @@ from statsmodels.base.model import GenericLikelihoodModel
 from calicost.utils_profiling import profile
 import os
 
-# DEPRECATE
-# os.environ["MKL_NUM_THREADS"] = "1"
-# os.environ["OPENBLAS_NUM_THREADS"] = "1"
-# os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["OPENBLAS_NUM_THREADS"] = "4"
+os.environ["OMP_NUM_THREADS"] = "4"
 
 
 def convert_params(mean, std):
