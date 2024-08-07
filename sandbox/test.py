@@ -1,11 +1,14 @@
 import timeit
-from beta_binomial import parallel_G, serial_G, parallel_beta_binomial, parallel_beta_binomial_zeropoint, beta_binomial_zeropoint
-from scipy.stats import betabinom
-from scipy.special import betaln
-from sklearn.preprocessing import OneHotEncoder
 
 import numpy as np
 import pylab as pl
+from scipy.special import betaln
+from scipy.stats import betabinom
+from sklearn.preprocessing import OneHotEncoder
+
+from beta_binomial import (beta_binomial_zeropoint, parallel_beta_binomial,
+                           parallel_beta_binomial_zeropoint, parallel_G,
+                           serial_G)
 
 
 def main():
