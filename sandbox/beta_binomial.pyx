@@ -114,3 +114,35 @@ def parallel_beta_binomial_zeropoint(k, n, a, b, w):
     _parallel_beta_binomial_zeropoint(k, n, a, b, w, out, max_threads)
 
     return out.sum()
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double _beta_binomial_zeropoint(
+    double[:] k,
+    double[:] n,
+    double[:] a,
+    double[:] b,
+    double[:] w,
+) nogil:
+  cdef unsigned int length
+  cdef double result
+
+  length = len(k)
+  result = 0.0
+
+  for idx in range(0, length):
+      """
+      if a[idx] <= 0.0:
+          return NAN
+      elif b[idx] <= 0.0:
+          return NAN
+      else:
+          result += w[idx] * (-csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
+      """
+
+      result += w[idx] * (-csc.betaln(a[idx], b[idx]) + csc.betaln(k[idx] + a[idx], n[idx] - k[idx] + b[idx]))
+
+  return result
+
+def beta_binomial_zeropoint(k, n, a, b, w):
+    return _beta_binomial_zeropoint(k, n, a, b, w)
