@@ -1,19 +1,21 @@
-import logging
-import numpy as np
-from numba import njit
-from scipy.stats import norm, multivariate_normal, poisson
-import scipy.special
-from scipy.optimize import minimize
-from scipy.optimize import Bounds
-from sklearn.mixture import GaussianMixture
-from tqdm import trange
-import statsmodels.api as sm
-from statsmodels.base.model import GenericLikelihoodModel
 import copy
+import logging
+
+import calicostem
+import networkx as nx
+import numpy as np
+import scipy.special
+import statsmodels.api as sm
 from calicost.utils_distribution_fitting import *
 from calicost.utils_hmm import *
 from calicost.utils_profiling import profile
-import networkx as nx
+from calicost.utils_tumor import get_tumor_weight
+from numba import njit
+from scipy.optimize import Bounds, minimize
+from scipy.stats import multivariate_normal, norm, poisson
+from sklearn.mixture import GaussianMixture
+from statsmodels.base.model import GenericLikelihoodModel
+from tqdm import trange
 
 """
 Joint NB-BB HMM that accounts for tumor/normal genome proportions. Tumor genome proportion is weighted by mu in BB distribution.
@@ -22,6 +24,8 @@ Joint NB-BB HMM that accounts for tumor/normal genome proportions. Tumor genome 
 ############################################################
 # whole inference
 ############################################################
+
+logger = logging.getLogger(__name__)
 
 class hmm_nophasing_v2(object):
     def __init__(self, params="stmp", t=1-1e-4):
@@ -39,7 +43,7 @@ class hmm_nophasing_v2(object):
 
     @staticmethod
     @profile
-    def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
+    def compute_emission_probability_nb_betabinom_v1(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
         """
         Attributes
         ----------
@@ -93,7 +97,41 @@ class hmm_nophasing_v2(object):
     
     @staticmethod
     @profile
-    def compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
+    def compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus):
+        n_states = log_mu.shape[0]
+        (n_obs, n_comp, n_spots) = X.shape
+
+        # NB (n_states, n_obs, n_spots) == (7, 4_248, 1)                                                                                                                                                             
+        log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
+
+        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)                                                                                                       
+        nb_mean = np.exp(log_mu)[:, None, :] * base_nb_mean[None, :, :]
+        nb_var = nb_mean + alphas[:, None, :] * nb_mean**2
+
+        kk = np.tile(X[:, 0, :], (n_states, 1, 1))
+        nn, pp = convert_params_var(nb_mean, nb_var)
+
+        idx = np.tile(base_nb_mean > 0., (n_states, 1, 1))
+        log_emission_rdr[idx] = scipy.stats.nbinom(kk[idx], nn[idx], pp[idx])
+
+        # NB BAF                                                                                                                                                                                                    
+        log_emission_baf = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
+
+        kk = np.tile(X[:, 1, :], (n_states, 1, 1))
+        nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
+
+        # NB (states, spots)                                                                                                                                                                                        
+        aa = np.tile((p_binom * taus)[:, None, :], (1, n_obs, 1))
+        bb = np.tile(((1. - p_binom) * taus)[:, None, :], (1, n_obs, 1))
+
+        idx = np.tile(total_bb_RD > 0., (n_states, 1, 1))
+        log_emission_baf[idx] = scipy.stats.betabinom(kk[idx], nn[idx], aa[idx], bb[idx])
+
+        return log_emission_rdr, log_emission_baf
+    
+    @staticmethod
+    @profile
+    def compute_emission_probability_nb_betabinom_mix_v1(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
         """
         Attributes
         ----------
@@ -127,19 +165,23 @@ class hmm_nophasing_v2(object):
         n_comp = X.shape[1]
         n_spots = X.shape[2]
         n_states = log_mu.shape[0]
+        
         # initialize log_emission
         log_emission_rdr = np.zeros((n_states, n_obs, n_spots))
         log_emission_baf = np.zeros((n_states, n_obs, n_spots))
+
         for i in np.arange(n_states):
             for s in np.arange(n_spots):
                 # expression from NB distribution
                 idx_nonzero_rdr = np.where(base_nb_mean[:,s] > 0)[0]
+                
                 if len(idx_nonzero_rdr) > 0:
                     # nb_mean = base_nb_mean[idx_nonzero_rdr,s] * (tumor_prop[s] * np.exp(log_mu[i, s]) + 1 - tumor_prop[s])
                     nb_mean = base_nb_mean[idx_nonzero_rdr,s] * (tumor_prop[idx_nonzero_rdr,s] * np.exp(log_mu[i, s]) + 1 - tumor_prop[idx_nonzero_rdr,s])
                     nb_std = np.sqrt(nb_mean + alphas[i, s] * nb_mean**2)
                     n, p = convert_params(nb_mean, nb_std)
                     log_emission_rdr[i, idx_nonzero_rdr, s] = scipy.stats.nbinom.logpmf(X[idx_nonzero_rdr, 0, s], n, p)
+                    
                 # AF from BetaBinom distribution
                 if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
                     this_weighted_tp = []
@@ -157,6 +199,142 @@ class hmm_nophasing_v2(object):
                     log_emission_baf[i, idx_nonzero_baf, s] += scipy.stats.betabinom.logpmf(X[idx_nonzero_baf,1,s], total_bb_RD[idx_nonzero_baf,s], mix_p_A * taus[i, s], mix_p_B * taus[i, s])
         return log_emission_rdr, log_emission_baf
     
+    @staticmethod
+    @profile
+    def compute_emission_probability_nb_betabinom_mix_v2(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
+        """
+        Attributes
+        ----------
+        X : array, shape (n_observations, n_components, n_spots)
+            Observed expression UMI count and allele frequency UMI count.
+
+        base_nb_mean : array, shape (n_observations, n_spots)
+            Mean expression under diploid state.
+
+        log_mu : array, shape (n_states, n_spots)
+            Log of read depth change due to CNV. Mean of NB distributions in HMM per state per spot.
+
+        alphas : array, shape (n_states, n_spots)
+            Over-dispersion of NB distributions in HMM per state per spot.
+
+        total_bb_RD : array, shape (n_observations, n_spots)
+            SNP-covering reads for both REF and ALT across genes along genome.
+
+        p_binom : array, shape (n_states, n_spots)
+            BAF due to CNV. Mean of Beta Binomial distribution in HMM per state per spot.
+
+        taus : array, shape (n_states, n_spots)
+            Over-dispersion of Beta Binomial distribution in HMM per state per spot.
+
+        tumor_prop: array, shape (n_obs, n_spots)
+            Tumor proportion
+        
+        Returns
+        ----------
+        log_emission : array, shape (n_states, n_obs, n_spots)
+            Log emission probability for each gene each spot (or sample) under each state. There is a common bag of states across all spots.
+        """
+        n_states = log_mu.shape[0]
+        n_obs, n_comp, n_spots = X.shape
+        
+        # NB (n_states, n_obs, n_spots) == (7, 4248, 1)
+        log_emission_rdr = np.zeros(shape=(n_states, n_obs, n_spots), dtype=float)
+
+        assert base_nb_mean.shape == (n_obs, n_spots)
+        assert tumor_prop.shape == (n_obs, n_spots)
+        assert log_mu.shape == (n_states, n_spots)
+        
+        # NB nb_mean, nb_std: (segments, spots) * (states, spots) = (states, segments, spots) == (7, 4248, 1)
+        nb_mean = base_nb_mean[None, :, :] * (tumor_prop[None, :, :] * np.exp(log_mu)[:, None, :] + 1. - tumor_prop[None, :, :])
+        nb_var = nb_mean + alphas[:, None, :] * nb_mean**2
+        
+        kk = np.tile(X[:, 0, :], (n_states, 1, 1))
+        nn, pp = convert_params_var(nb_mean, nb_var)
+
+        idx = np.tile(base_nb_mean > 0., (n_states, 1, 1))
+
+        log_emission_rdr[idx] = scipy.stats.nbinom.logpmf(kk[idx], nn[idx], pp[idx])
+        
+        if ("logmu_shift" in kwargs) and ("sample_length" in kwargs):
+            sample_lengths = kwargs["sample_length"]
+            logmu_shift = kwargs["logmu_shift"]
+
+            # TODO HACK ask Cong.
+            logmu_shift = np.tile(logmu_shift, (1, n_spots))
+            
+            # NB see ../src/calicost/utils_tumor.py
+            tumor_weight = get_tumor_weight(sample_lengths, tumor_prop, log_mu, logmu_shift)
+        else:
+            tumor_weight = np.tile(tumor_prop, (n_states, 1, 1))
+
+        # NB initialize log_emission
+        log_emission_baf = np.zeros((n_states, n_obs, n_spots))
+        
+        mix_p_A = p_binom[:, None, :] * tumor_weight + 0.5 * (1. - tumor_weight)
+        mix_p_B = (1. - p_binom)[:, None, :] * tumor_weight + 0.5 * (1. - tumor_weight)
+
+        aa = mix_p_A * taus[:, None, :]
+        bb = mix_p_B * taus[:, None, :]
+        
+        kk = np.tile(X[:, 1, :], (n_states, 1, 1))
+        nn = np.tile(total_bb_RD[:, :], (n_states, 1, 1))
+
+        idx = np.tile(total_bb_RD > 0., (n_states, 1, 1))
+        
+        log_emission_baf[idx] = scipy.stats.betabinom.logpmf(kk[idx], nn[idx], aa[idx], bb[idx])
+        
+        return log_emission_rdr, log_emission_baf
+        
+    @staticmethod
+    @profile
+    def compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, **kwargs):
+        n_obs, n_comp, n_spots = X.shape
+        n_state = log_mu.shape[0]
+        
+        assert base_nb_mean.shape == (n_obs, n_spots), f"Expected {(n_obs, n_spots)}, found {base_nb_mean.shape}"
+        assert tumor_prop.shape == (n_obs, n_spots), f"Expected {(n_obs, n_spots)}, found {tumor_prop.shape}"
+        assert total_bb_RD.shape == (n_obs, n_spots), f"Expected {(n_obs, n_spots)}, found {total_bb_RD.shape}"
+        assert tumor_prop.shape == (n_obs, n_spots), f"Expected {(n_obs, n_spots)}, found {tumor_prop.shape}"
+
+        # TODO
+        def validate_model_param_shape(model_param_array):
+            assert model_param_array.shape in [(n_state, n_spots), (n_state, 1)], f"Expected {(n_state, n_spots)} or {(n_state, 1)}, found {model_param_array.shape}"
+        
+        validate_model_param_shape(log_mu)
+        validate_model_param_shape(alphas)
+        validate_model_param_shape(p_binom)
+        validate_model_param_shape(taus)
+
+        # TODO
+        if X.size > 40_000:
+            logger.info(f"Evaluating emission for n_state, n_obs, n_spots = {n_state}, {n_obs}, {n_spots}.")
+        
+        log_emission_rdr = calicostem.compute_emission_probability_nb(X[:,0,:], base_nb_mean, tumor_prop, log_mu, alphas)
+
+        if "sample_length" in kwargs or "logmu_shift" in kwargs:
+            sample_length = kwargs["sample_length"]
+            logmu_shift = kwargs["logmu_shift"]
+
+            n_clone = logmu_shift.shape[0]
+
+            assert sample_length.shape == (n_clone,), f"Expected {(n_clone, )}, found {sample_length.shape}"
+            assert kwargs["logmu_shift"].shape == (n_clone, 1), f"Expected {(n_clone, 1)}, found {kwargs['logmu_shift'].shape}"
+
+            if X.size > 40_000:
+                logger.info(f"Evaluating tumor weighted emission for n_clone={n_clone}.")
+            
+            # TODO HACK types
+            log_emission_baf = calicostem.compute_emission_probability_bb_mix_weighted(
+                X[:,1,:], base_nb_mean, total_bb_RD.astype(float), p_binom, taus, tumor_prop, sample_length.astype(float), log_mu, logmu_shift
+            )
+        else:
+            # TODO HACK types
+            log_emission_baf = calicostem.compute_emission_probability_bb_mix(
+                X[:,1,:], base_nb_mean, total_bb_RD.astype(float), p_binom, taus, tumor_prop,
+            )
+        
+        return log_emission_rdr, log_emission_baf
+        
     @staticmethod
     @njit 
     def forward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat):
