@@ -118,7 +118,7 @@ def get_betabinomial_speedup(dataset, ntrials=5, verbose=True):
 
 
 def main():
-    ns = np.logspace(1, 6, 6).astype(int)
+    ns = np.logspace(1, 8, 8).astype(int)
     xs = [get_betabinomial_speedup(get_basic_dataset(n)) for n in ns]
 
     print()
