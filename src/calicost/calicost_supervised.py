@@ -32,7 +32,7 @@ import seaborn
 plt.rcParams.update({'font.size': 14})
 
 import mkl
-mkl.set_num_threads(1)
+mkl.set_num_threads(4)
 
 
 def main(configuration_file):
