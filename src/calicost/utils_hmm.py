@@ -5,7 +5,7 @@ import scipy.special
 from tqdm import trange
 from sklearn.mixture import GaussianMixture
 from calicost.utils_distribution_fitting import *
-
+from calicost.utils_profiling import profile
 
 @njit
 def np_max_ax_squeeze(arr, axis=0):
@@ -368,7 +368,7 @@ def update_transition_sitewise(log_xi, is_diag=False):
         np.fill_diagonal(log_transmat, t)
     return log_transmat
 
-
+@profile
 def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrices, log_gamma, base_nb_mean, alphas, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2, min_estep_weight=0.1):
     """
@@ -393,7 +393,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
         for s in range(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 model = sm.GLM(unique_values[s][idx_nonzero,0], np.ones(len(idx_nonzero)).reshape(-1,1), \
@@ -407,7 +407,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
     else:
         if not shared_NB_dispersion:
             for s in range(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     model = Weighted_NegativeBinomial(unique_values[s][idx_nonzero,0], \
@@ -432,7 +432,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile(unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] + tmp[i+n_states,idx_nonzero] for i in range(n_states) ])
                 this_features = np.zeros((n_states*len(idx_nonzero), n_states))
                 for i in np.arange(n_states):
@@ -470,7 +470,7 @@ def update_emission_params_nb_sitewise_uniqvalues(unique_values, mapping_matrice
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, base_nb_mean, alphas, tumor_prop, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -495,7 +495,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
         for s in range(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 model = sm.GLM(unique_values[s][idx_nonzero,0], np.ones(len(idx_nonzero)).reshape(-1,1), \
@@ -509,7 +509,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     else:
         if not shared_NB_dispersion:
             for s in range(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     this_tp = (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero]
@@ -536,7 +536,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile(unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_tp = np.tile( (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero], n_states)
                 assert np.all(this_tp < 1+1e-4)
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] + tmp[i+n_states,idx_nonzero] for i in range(n_states) ])
@@ -579,7 +579,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrices, log_gamma, total_bb_RD, taus, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -603,7 +603,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(len(unique_values)):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -621,7 +621,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     else:
         if not shared_BB_dispersion:
             for s in np.arange(len(unique_values)):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -647,7 +647,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile( np.append(unique_values[s][idx_nonzero,1], unique_values[s][idx_nonzero,1]), n_states)
                 this_y = np.tile( np.append(unique_values[s][idx_nonzero,0], unique_values[s][idx_nonzero,1]-unique_values[s][idx_nonzero,0]), n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_weights = np.concatenate([ np.append(tmp[i,idx_nonzero], tmp[i+n_states,idx_nonzero]) for i in range(n_states) ])
                 this_features = np.zeros((2*n_states*len(idx_nonzero), n_states))
                 for i in np.arange(n_states):
@@ -685,7 +685,7 @@ def update_emission_params_bb_sitewise_uniqvalues(unique_values, mapping_matrice
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
     return new_p_binom, new_taus
 
-
+@profile
 def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, total_bb_RD, taus, tumor_prop, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -709,7 +709,7 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -731,7 +731,7 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_mat
     else:
         if not shared_BB_dispersion:
             for s in np.arange(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -762,7 +762,7 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(unique_values, mapping_mat
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile( np.append(unique_values[s][idx_nonzero,1], unique_values[s][idx_nonzero,1]), n_states)
                 this_y = np.tile( np.append(unique_values[s][idx_nonzero,0], unique_values[s][idx_nonzero,1]-unique_values[s][idx_nonzero,0]), n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_tp = np.tile( (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero], n_states)
                 assert np.all(this_tp < 1+1e-4)
                 this_weights = np.concatenate([ np.append(tmp[i,idx_nonzero], tmp[i+n_states,idx_nonzero]) for i in range(n_states) ])
@@ -865,7 +865,7 @@ def update_transition_nophasing(log_xi, is_diag=False):
         np.fill_diagonal(log_transmat, t)
     return log_transmat
 
-
+@profile
 def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, alphas, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -890,7 +890,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
         for s in range(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 model = sm.GLM(unique_values[s][idx_nonzero,0], np.ones(len(idx_nonzero)).reshape(-1,1), \
@@ -904,7 +904,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     else:
         if not shared_NB_dispersion:
             for s in range(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     model = Weighted_NegativeBinomial(unique_values[s][idx_nonzero,0], \
@@ -929,7 +929,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile(unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] for i in range(n_states) ])
                 this_features = np.zeros((n_states*len(idx_nonzero), n_states))
                 for i in np.arange(n_states):
@@ -967,7 +967,7 @@ def update_emission_params_nb_nophasing_uniqvalues(unique_values, mapping_matric
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, alphas, tumor_prop, \
     start_log_mu=None, fix_NB_dispersion=False, shared_NB_dispersion=False, min_log_rdr=-2, max_log_rdr=2):
     """
@@ -992,7 +992,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
         for s in range(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 model = sm.GLM(unique_values[s][idx_nonzero,0], np.ones(len(idx_nonzero)).reshape(-1,1), \
@@ -1006,7 +1006,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     else:
         if not shared_NB_dispersion:
             for s in range(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     this_tp = (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero]
@@ -1033,7 +1033,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile(unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_tp = np.tile( (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero], n_states)
                 assert np.all(this_tp < 1 + 1e-4)
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] for i in range(n_states) ])
@@ -1076,7 +1076,7 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
     return new_log_mu, new_alphas
 
-
+@profile
 def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matrices, log_gamma, taus, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -1100,7 +1100,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(len(unique_values)):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -1118,7 +1118,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
     else:
         if not shared_BB_dispersion:
             for s in np.arange(len(unique_values)):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -1144,7 +1144,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile( unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile( unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] for i in range(n_states) ])
                 this_features = np.zeros((n_states*len(idx_nonzero), n_states))
                 for i in np.arange(n_states):
@@ -1183,7 +1183,7 @@ def update_emission_params_bb_nophasing_uniqvalues(unique_values, mapping_matric
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
     return new_p_binom, new_taus
 
-
+@profile
 def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_matrices, log_gamma, taus, tumor_prop, \
     start_p_binom=None, fix_BB_dispersion=False, shared_BB_dispersion=False, \
     percent_threshold=0.99, min_binom_prob=0.01, max_binom_prob=0.99):
@@ -1207,7 +1207,7 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     new_taus = copy.copy(taus)
     if fix_BB_dispersion:
         for s in np.arange(n_spots):
-            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+            tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
             idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
             for i in range(n_states):
                 # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -1229,7 +1229,7 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_ma
     else:
         if not shared_BB_dispersion:
             for s in np.arange(n_spots):
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 for i in range(n_states):
                     # only optimize for BAF only when the posterior probability >= 0.1 (at least 1 SNP is under this state)
@@ -1260,7 +1260,7 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(unique_values, mapping_ma
                 idx_nonzero = np.where(unique_values[s][:,1] > 0)[0]
                 this_exposure = np.tile( unique_values[s][idx_nonzero,1], n_states)
                 this_y = np.tile( unique_values[s][idx_nonzero,0], n_states)
-                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
+                tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).toarray()
                 this_tp = np.tile( (mapping_matrices[s].T @ tumor_prop[:,s])[idx_nonzero] / (mapping_matrices[s].T @ np.ones(tumor_prop.shape[0]))[idx_nonzero], n_states)
                 assert np.all(this_tp < 1 + 1e-4)
                 this_weights = np.concatenate([ tmp[i,idx_nonzero] for i in range(n_states) ])
