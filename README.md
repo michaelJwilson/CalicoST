@@ -4,11 +4,11 @@
 <img src="https://github.com/raphael-group/CalicoST/blob/main/docs/_static/img/overview4_combine.png?raw=true" width="100%" height="auto"/>
 </p>
 
-CalicoST is a probabilistic model that infers allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics.CalicoST has the following key features:
+CalicoST is a probabilistic model that infers allele-specific copy number aberrations and tumor phylogeography from spatially resolved transcriptomics.  CalicoST has the following key features:
 1. Identifies allele-specific integer copy numbers for each transcribed region, revealing events such as copy neutral loss of heterozygosity (CNLOH) and mirrored subclonal CNAs that are invisible to total copy number analysis.
 2. Assigns each spot a clone label indicating whether the spot is primarily normal cells or a cancer clone with aberration copy number profile.
 3. Infers a phylogeny relating the identified cancer clones as well as a phylogeography that combines genetic evolution and spatial dissemination of clones.
-4. Handles normal cell admixture in SRT technologies hat are not single-cell resolution (e.g. 10x Genomics Visium) to infer more accurate allele-specific copy numbers and cancer clones.
+4. Handles normal cell admixture in SRT technologies that are not single-cell resolution (e.g. 10x Genomics Visium) to infer more accurate allele-specific copy numbers and cancer clones.
 5.  Simultaneously analyzes multiple regions or aligned SRT slices from the same tumor.
 
 # System requirements
@@ -23,7 +23,6 @@ cd CalicoST
 conda env create -f environment.yml --name calicost_env
 ```
 
-
 Then, install CalicoST using pip by
 ```
 conda activate calicost_env
@@ -33,7 +32,7 @@ pip install -e .
 Setting up the conda environments takes around 15 minutes on an HPC head node.
 
 ## Additional installation for SNP parsing
-CalicoST requires allele count matrices for reference-phased A and B alleles for inferring allele-specific CNAs, and provides a snakemake pipeline for obtaining the required matrices from a BAM file. Run the following commands in CalicoST directory for installing additional package, [Eagle2](https://alkesgroup.broadinstitute.org/Eagle/), for snakemake preprocessing pipeline.
+CalicoST requires allele count matrices for reference-phased A and B alleles for inferring allele-specific CNAs, and provides a snakemake pipeline for obtaining the required matrices from a BAM file. Run the following commands in CalicoST directory for installing additional package, [Eagle2](https://alkesgroup.broadinstitute.org/Eagle/), for the snakemake preprocessing pipeline:
 
 ```
 mkdir external
@@ -41,7 +40,7 @@ wget --directory-prefix=external https://storage.googleapis.com/broad-alkesgroup
 tar -xzf external/Eagle_v2.4.1.tar.gz -C external
 ```
 
-## Additional installation for reconstructing phylogeny
+## Optional installation for reconstructing phylogeny
 Based on the inferred cancer clones and allele-specific CNAs by CalicoST, we apply Startle to reconstruct a phylogenetic tree along the clones. Install Startle by
 ```
 git clone --recurse-submodules https://github.com/raphael-group/startle.git
@@ -55,30 +54,33 @@ cmake -DLIBLEMON_ROOT=<lemon path>\
         ..
 make
 ```
-
+Required dependencies include [LEMON](https://lemon.cs.elte.hu/trac/lemon/wiki/InstallLinux), [CPLEX and concert](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer),
+perl and python3, as listed by the required paths.
 
 # Getting started
 ### Preprocessing: genotyping and reference-based phasing
-To infer allele-specific CNAs, we generate allele count matrices in this preprocessing step. We followed the recommended pipeline by [Numbat](https://kharchenkolab.github.io/numbat/), which is designed for scRNA-seq data to infer clones and CNAs: first genotyping using the BAM file by cellsnp-lite (included in the conda environment) and reference-based phasing by Eagle2. Download the following panels for genotyping and reference-based phasing.
+To infer allele-specific CNAs, we generate allele count matrices in this preprocessing step.  We followed the recommended pipeline by [Numbat](https://kharchenkolab.github.io/numbat/), which is designed for scRNA-seq data to infer clones and CNAs: first genotyping the BAM file with cellsnp-lite (included in the conda environment) and reference-based phasing by Eagle2. Download the following panels for genotyping and reference-based phasing.
 * [SNP panel](https://sourceforge.net/projects/cellsnp/files/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz) - 0.5GB in size. You can also choose other SNP panels from [cellsnp-lite webpage](https://cellsnp-lite.readthedocs.io/en/latest/main/data.html#data-list-of-common-snps).
-* [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip)- 9.0GB in size. Unzip the panel after downloading.
+* [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip)- 9.0GB in size.  Unzip the panel after downloading.
 
-Replace the following paths `config.yaml`:
-* `region_vcf`: Replace with the path of downloaded SNP panel.
+Replace the following paths in `config.yaml`:
+* `calicost_dir` and `eagledir` with the path to the cloned CalicoST directory and downloaded Eagle2 directory.
+* `region_vcf`: Replace with the path of the downloaded SNP panel.
 * `phasing_panel`: Replace with the unzipped directory of the downloaded phasing panel.
 * `spaceranger_dir`: Replace with the spaceranger directory of your Visium data, which should contain the BAM file `possorted_genome_bam.bam`.
 * `output_snpinfo`: Replace with the desired output directory.
-* Replace `calicost_dir` and `eagledir` with the path to the cloned CalicoST directory and downloaded Eagle2 directory.
 
-Then you can run preprocessing pipeline by
+Then you can run the preprocessing pipeline with
 ```
-snakemake --cores <number threads> --configfile config.yaml --snakefile calicost.smk all
+snakemake --cores <number cores> --configfile config.yaml --snakefile calicost.smk all
 ```
+First, see the tutorials and examples below.
+
 
 ### Inferring tumor purity per spot (optional)
 Replace the paths in the parameter configuration file `configuration_purity` with the corresponding data/reference file paths and run
 ```
-OMP_NUM_THREADS=1 <CalicoST directory>/src/calicost/estimate_tumor_proportion.py -c configuration_purity
+OMP_NUM_THREADS=1 python <CalicoST directory>/src/calicost/estimate_tumor_proportion.py -c configuration_purity
 ```
 
 ### Inferring clones and allele-specific CNAs
@@ -87,15 +89,16 @@ Replace the paths in parameter configuration file `configuration_cna` with the c
 OMP_NUM_THREADS=1 python <CalicoST directory>/src/calicost/calicost_main.py -c configuration_cna
 ```
 
-When jointly inferring clones and CNAs across multiple SRT slices, prepare a table with the following columns (See [`examples/example_input_filelist`](https://github.com/raphael-group/CalicoST/blob/main/examples/example_input_filelist) as an example). 
+When jointly inferring clones and CNAs across multiple SRT slices, prepare a tsv with the following columns (See [`examples/example_input_filelist`](https://github.com/raphael-group/CalicoST/blob/main/examples/example_input_filelist) as an example).
+```
 Path to BAM file | sample ID | Path to Spaceranger outs
-Modify `configuration_cna_multi` with paths to the table and run
+```
+Modify `configuration_cna_multi` with paths to the tsv,etc. and run
 ```
 OMP_NUM_THREADS=1 python <CalicoST directory>/src/calicost/calicost_main.py -c configuration_cna_multi
 ```
 
 ### Reconstruct phylogeography
-
 ```
 python <CalicoST directory>/src/calicost/phylogeny_startle.py -c <CalicoST clone and CNA output directory> -s <startle executable path> -o <output directory>
 ```
@@ -107,11 +110,9 @@ Check out our [readthedocs](https://calicost.readthedocs.io/en/latest/) for the 
 The simulated count matrices and parameter configuration file are available from [`examples/simulated_example.tar.gz`](https://github.com/raphael-group/CalicoST/blob/main/examples/simulated_example.tar.gz). CalicoST takes about 2h to finish on this example.
 
 2. [Inferring tumor purity, clones, allele-specific CNAs, and phylogeography on prostate cancer data](https://calicost.readthedocs.io/en/latest/notebooks/tutorials/prostate_tutorial.html)
-The transcript count, allele count matrices, and running configuration fies are available from [`examples/prostate_example.tar.gz`](https://github.com/raphael-group/CalicoST/blob/main/examples/prostate_example.tar.gz). This sample contains five slices and over 10000 spots, CalicoST takes about 9h to finish on this example.
+The transcript count, allele count matrices, and running configuration files are available from [`examples/prostate_example.tar.gz`](https://github.com/raphael-group/CalicoST/blob/main/examples/prostate_example.tar.gz). This sample contains five slices and over 10000 spots.  CalicoST takes about 9h to finish on this example.
 
-<!-- CalicoST requires a reference SNP panel and phasing panel, which can be downloaded from
-* [SNP panel](https://sourceforge.net/projects/cellsnp/files/SNPlist/genome1K.phase3.SNP_AF5e4.chr1toX.hg38.vcf.gz/download). You can also choose other SNP panels from [cellsnp-lite webpage](https://cellsnp-lite.readthedocs.io/en/latest/snp_list.html).
-* [Phasing panel](http://pklab.med.harvard.edu/teng/data/1000G_hg38.zip) -->
+See the instructions on obtaining the required SNP and phasing panels above.
 
 <!-- ### Run CalicoST
 Untar the downloaded example data. Replace the following paths in the `example_config.yaml`  of the downloaded example data with paths on your machine
@@ -125,19 +126,18 @@ To avoid falling into local maxima in CalicoST's optimization objective, we reco
 Then run CalicoST by
 ```
 cd <directory of downloaded example data>
+
 snakemake --cores 5 --configfile example_config.yaml --snakefile <calicost_dir>/calicost.smk all
 ```
+CalicoST takes about 69 minutes to finish this example hen using 5 cores on an HPC. -->
 
-CalicoST takes about 69 minutes to finish on this example using 5 cores on an HPC. -->
 
 ### Understanding the output
-The above snakemake run will create a folder `calicost` in the directory of downloaded example data. Within this folder, each random initialization of CalicoST generates a subdirectory of `calicost/clone*`. 
-
-CalicoST generates the following key files of each random initialization:
+The above example snakemake run will create a folder `calicost` in the directory of downloaded example data.  Within this folder, each random initialization of CalicoST generates a subdirectory of `calicost/clone*`.  CalicoST generates the following key files of each random initialization:
 * clone_labels.tsv: The inferred clone labels for each spot.
 * cnv_seglevel.tsv: Allele-specific copy numbers for each clone for each genome segment.
 * cnv_genelevel.tsv: The projected allele-specific copy numbers from genome segments to the covered genes.
-* cnv_diploid_seglevel.tsv, cnv_triploid_seglevel.tsv, cnv_tetraploid_seglevel.tsv, cnv_diploid_genelevel.tsv, cnv_triploid_genelevel.tsv, cnv_tetraploid_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy for each genome segment or each gene.
+* cnv_<ploidy>_seglevel.tsv, cnv_<ploidy>_genelevel.tsv: Allele-specific copy numbers when enforcing a ploidy of {diploid, triploid, tetraploid} for each genome segment or gene.
 
 See the following examples of the key files.
 ```

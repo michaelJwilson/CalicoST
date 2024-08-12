@@ -1,0 +1,10 @@
+- cmake command valid?
+- phylogeny_startle.py -c <CalicoST clone and CNA output directory>
+- only linked to pip install if conda activated in repo directory?  https://www.anaconda.com/blog/using-pip-in-a-conda-environment
+- snakemake is not recognising variables that change the config.
+- broken links:  https://calicost.readthedocs.io/en/latest/installation; should be https://calicost.readthedocs.io/en/latest/installation(.html)
+- broken link: Browse the Tutorials to get started with CalicoST here.  https://calicost.readthedocs.io/en/latest/notebooks/tutorials/index
+- remove example_config from CalicoST example?  should be run with configuration_cna.
+
+##  Deprecated
+- /Genomics/argo/users/mw9568/repos/CalicoST/GRCh38_resources/genetic_map_GRCh38_merged.tab(.gz)
