@@ -7,13 +7,14 @@ from sklearn.metrics import adjusted_rand_score
 import scanpy as sc
 import anndata
 import logging
-
+"""
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logger = logging.getLogger()
+"""
+logger = logging.getLogger(__name__)
 import copy
 from pathlib import Path
 import functools
@@ -185,7 +186,7 @@ def parse_visium(config):
             config["shared_NB_dispersion"],
             config["fix_BB_dispersion"],
             config["shared_BB_dispersion"],
-            30,
+            config["max_iter"],
             1e-3,
             threshold=config["tumorprop_threshold"],
         )

@@ -16,6 +16,7 @@ from calicost.hmm_NB_BB_nophasing import *
 from calicost.hmm_NB_BB_nophasing_v2 import *
 import networkx as nx
 
+logger = logging.getLogger(__name__)
 
 ############################################################
 # whole inference
@@ -36,7 +37,6 @@ class hmm_sitewise(object):
         self.params = params
         self.t = t
 
-    #
     @staticmethod
     def compute_emission_probability_nb_betabinom(
         X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus
@@ -70,6 +70,8 @@ class hmm_sitewise(object):
         log_emission : array, shape (2*n_states, n_obs, n_spots)
             Log emission probability for each gene each spot (or sample) under each state. There is a common bag of states across all spots.
         """
+        logger.info("Computing emission probability for negative binomial & beta binomial (sitewise).")
+
         n_obs = X.shape[0]
         n_comp = X.shape[1]
         n_spots = X.shape[2]
@@ -110,9 +112,11 @@ class hmm_sitewise(object):
                             p_binom[i, s] * taus[i, s],
                         )
                     )
+
+        logger.info("Computed emission probability for negative binomial & beta binomial (sitewise).")
+
         return log_emission_rdr, log_emission_baf
 
-    #
     @staticmethod
     def compute_emission_probability_nb_betabinom_mix(
         X,
@@ -154,6 +158,8 @@ class hmm_sitewise(object):
         log_emission : array, shape (2*n_states, n_obs, n_spots)
             Log emission probability for each gene each spot (or sample) under each state. There is a common bag of states across all spots.
         """
+        logger.info("Computing emission probability for *mixed* negative binomial & beta binomial (sitewise).")
+
         n_obs = X.shape[0]
         n_comp = X.shape[1]
         n_spots = X.shape[2]
@@ -204,9 +210,11 @@ class hmm_sitewise(object):
                         mix_p_B * taus[i, s],
                         mix_p_A * taus[i, s],
                     )
+
+        logger.info("Computed emission probability for *mixed* negative binomial & beta binomial (sitewise).")
+
         return log_emission_rdr, log_emission_baf
 
-    #
     @staticmethod
     @njit
     def forward_lattice(
@@ -274,7 +282,6 @@ class hmm_sitewise(object):
             cumlen += le
         return log_alpha
 
-    #
     @staticmethod
     @njit
     def backward_lattice(
@@ -338,7 +345,6 @@ class hmm_sitewise(object):
             cumlen += le
         return log_beta
 
-    #
     def run_baum_welch_nb_bb(
         self,
         X,
@@ -374,7 +380,9 @@ class hmm_sitewise(object):
         n_comp = X.shape[1]
         n_spots = X.shape[2]
         assert n_comp == 2
-        # initialize NB logmean shift and BetaBinom prob
+
+        logger.info("Initialize Baum Welch NB logmean shift, BetaBinom prob and dispersion param inverse (sitewise).")
+
         log_mu = (
             np.vstack([np.linspace(-0.1, 0.1, n_states) for r in range(n_spots)]).T
             if init_log_mu is None
@@ -385,12 +393,14 @@ class hmm_sitewise(object):
             if init_p_binom is None
             else init_p_binom
         )
-        # initialize (inverse of) dispersion param in NB and BetaBinom
+
+        # NB initialize (inverse of) dispersion param in NB and BetaBinom
         alphas = (
             0.1 * np.ones((n_states, n_spots)) if init_alphas is None else init_alphas
         )
         taus = 30 * np.ones((n_states, n_spots)) if init_taus is None else init_taus
-        # initialize start probability and emission probability
+
+        # NB initialize start probability and emission probability
         log_startprob = np.log(np.ones(n_states) / n_states)
         if n_states > 1:
             transmat = np.ones((n_states, n_states)) * (1 - self.t) / (n_states - 1)
@@ -398,16 +408,19 @@ class hmm_sitewise(object):
             log_transmat = np.log(transmat)
         else:
             log_transmat = np.zeros((1, 1))
-        # a trick to speed up BetaBinom optimization: taking only unique values of (B allele count, total SNP covering read count)
+
+        # NB a trick to speed up BetaBinom optimization: taking only unique values of 
+        #   (B allele count, total SNP covering read count)
         unique_values_nb, mapping_matrices_nb = construct_unique_matrix(
             X[:, 0, :], base_nb_mean
         )
         unique_values_bb, mapping_matrices_bb = construct_unique_matrix(
             X[:, 1, :], total_bb_RD
         )
-        # EM algorithm
-        for r in trange(max_iter):
-            # E step
+
+        for r in trange(max_iter, desc="EM algorithm (sitewise)"):
+            logger.info(f"Calculating E-step (sitewise) for iteration {r} of {max_iter}.")
+
             if tumor_prop is None:
                 log_emission_rdr, log_emission_baf = (
                     hmm_sitewise.compute_emission_probability_nb_betabinom(
@@ -429,6 +442,7 @@ class hmm_sitewise(object):
                     )
                 )
                 log_emission = log_emission_rdr + log_emission_baf
+
             log_alpha = hmm_sitewise.forward_lattice(
                 lengths,
                 log_transmat,
@@ -436,6 +450,7 @@ class hmm_sitewise(object):
                 log_emission,
                 log_sitewise_transmat,
             )
+
             log_beta = hmm_sitewise.backward_lattice(
                 lengths,
                 log_transmat,
@@ -443,11 +458,15 @@ class hmm_sitewise(object):
                 log_emission,
                 log_sitewise_transmat,
             )
+
             log_gamma = compute_posterior_obs(log_alpha, log_beta)
+
             log_xi = compute_posterior_transition_sitewise(
                 log_alpha, log_beta, log_transmat, log_emission
             )
-            # M step
+
+            logger.info(f"Calculating M-step (sitewise) for iteration {r} of {max_iter}.")
+
             if "s" in self.params:
                 new_log_startprob = update_startprob_sitewise(lengths, log_gamma)
                 new_log_startprob = new_log_startprob.flatten()
@@ -522,13 +541,16 @@ class hmm_sitewise(object):
                 new_p_binom = p_binom
                 new_taus = taus
             # check convergence
-            print(
+            logger.info(
+                "EM convergence metrics (sitewise)",
                 np.mean(np.abs(np.exp(new_log_startprob) - np.exp(log_startprob))),
                 np.mean(np.abs(np.exp(new_log_transmat) - np.exp(log_transmat))),
                 np.mean(np.abs(new_log_mu - log_mu)),
                 np.mean(np.abs(new_p_binom - p_binom)),
             )
-            print(np.hstack([new_log_mu, new_p_binom]))
+            
+            logger.info(np.hstack([new_log_mu, new_p_binom]))
+            
             if (
                 np.mean(np.abs(np.exp(new_log_transmat) - np.exp(log_transmat))) < tol
                 and np.mean(np.abs(new_log_mu - log_mu)) < tol
@@ -541,6 +563,9 @@ class hmm_sitewise(object):
             alphas = new_alphas
             p_binom = new_p_binom
             taus = new_taus
+
+        logger.info("Computed Baum-Welch (sitewise).")
+
         return (
             new_log_mu,
             new_alphas,
@@ -834,8 +859,8 @@ def pipeline_baum_welch(
             init_log_mu = tmp_log_mu
         if (init_p_binom is None) and ("p" in params):
             init_p_binom = tmp_p_binom
-    print(f"init_log_mu = {init_log_mu}")
-    print(f"init_p_binom = {init_p_binom}")
+
+    logger.info(f"Initial (mu, p):\n{np.hstack([init_log_mu, init_p_binom])}")
 
     # fit HMM-NB-BetaBinom
     # new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat = hmmmodel.run_baum_welch_nb_bb(X, lengths, \
@@ -1211,11 +1236,14 @@ def similarity_components_rdrbaf_neymanpearson(
     n_obs = X.shape[0]
     n_states = res["new_p_binom"].shape[0]
     n_clones = X.shape[2]
+
+    logger.info("Computing similarity_components_rdrbaf_neymanpearson for (n_obs, n_states, n_clones) = ({n_obs}, {n_states}, {n_clones}).")
+    
     G = nx.Graph()
     G.add_nodes_from(np.arange(n_clones))
-    #
+    
     lambd = np.sum(base_nb_mean, axis=1) / np.sum(base_nb_mean)
-    #
+    
     if tumor_prop is None:
         log_emission_rdr, log_emission_baf = (
             hmmclass.compute_emission_probability_nb_betabinom(
@@ -1287,10 +1315,11 @@ def similarity_components_rdrbaf_neymanpearson(
     )
     reshaped_pred = np.argmax(res["log_gamma"], axis=0).reshape((X.shape[2], -1))
     reshaped_pred_cnv = reshaped_pred % n_states
+    
     all_test_statistics = []
+    
     for c1 in range(n_clones):
         for c2 in range(c1 + 1, n_clones):
-            # unmergeable_bincount = 0
             unique_pair_states = [
                 x
                 for x in np.unique(reshaped_pred_cnv[np.array([c1, c2]), :], axis=1).T
@@ -1302,6 +1331,7 @@ def similarity_components_rdrbaf_neymanpearson(
                     (reshaped_pred_cnv[c1, :] == p[0])
                     & (reshaped_pred_cnv[c2, :] == p[1])
                 )[0]
+                
                 if "m" in params and "p" in params:
                     t_neymanpearson = eval_neymanpearson_rdrbaf(
                         log_emission_rdr[:, :, c1],
@@ -1326,8 +1356,12 @@ def similarity_components_rdrbaf_neymanpearson(
                         res,
                         p,
                     )
-                print(c1, c2, p, len(bidx), t_neymanpearson)
+
+                # TODO
+                logger.info(f"{c1}, {c2}, {p}, {len(bidx)}, {t_neymanpearson}")
+                
                 all_test_statistics.append([c1, c2, p, t_neymanpearson])
+                
                 if len(bidx) >= minlength:
                     list_t_neymanpearson.append(t_neymanpearson)
             if (
@@ -1340,8 +1374,11 @@ def similarity_components_rdrbaf_neymanpearson(
                     else 1e-3
                 )
                 G.add_weighted_edges_from([(c1, c2, max_v)])
-    # maximal cliques
+
+    logger.info("Computing Maximal cliques.")
+                
     cliques = []
+    
     for x in nx.find_cliques(G):
         this_len = len(x)
         this_weights = (
@@ -1349,23 +1386,31 @@ def similarity_components_rdrbaf_neymanpearson(
             / 2
         )
         cliques.append((x, this_len, this_weights))
+        
     cliques.sort(key=lambda x: (-x[1], x[2]))
+    
     covered_nodes = set()
     merging_groups = []
+    
     for c in cliques:
         if len(set(c[0]) & covered_nodes) == 0:
             merging_groups.append(list(c[0]))
             covered_nodes = covered_nodes | set(c[0])
+            
     for c in range(n_clones):
         if not (c in covered_nodes):
             merging_groups.append([c])
             covered_nodes.add(c)
+            
     merging_groups.sort(key=lambda x: np.min(x))
-    # clone assignment after merging
+    
+    # NB clone assignment after merging
     map_clone_id = {}
+    
     for i, x in enumerate(merging_groups):
         for z in x:
             map_clone_id[z] = i
+            
     new_assignment = np.array([map_clone_id[x] for x in res["new_assignment"]])
     merged_res = copy.copy(res)
     merged_res["new_assignment"] = new_assignment
@@ -1382,6 +1427,9 @@ def similarity_components_rdrbaf_neymanpearson(
             for c in merging_groups
         ]
     )
+
+    logger.info("Computed similarity_components_rdrbaf_neymanpearson.")
+    
     return merging_groups, merged_res
 
 
@@ -1401,11 +1449,12 @@ def combine_similar_states_across_clones(
     n_states = res["new_p_binom"].shape[0]
     reshaped_pred = np.argmax(res["log_gamma"], axis=0).reshape((X.shape[2], -1))
     reshaped_pred_cnv = reshaped_pred % n_states
-    #
+    
     all_test_statistics = compute_neymanpearson_stats(
         X, base_nb_mean, total_bb_RD, res, params, tumor_prop, hmmclass
     )
-    # make the pair of states consistent between clone c1 and clone c2 if their t_neymanpearson test statistics is small
+    
+    # NB make the pair of states consistent between clone c1 and clone c2 if their t_neymanpearson test statistics is small
     for c1 in range(n_clones):
         for c2 in range(c1 + 1, n_clones):
             list_t_neymanpearson = all_test_statistics[(c1, c2)]
@@ -1430,128 +1479,3 @@ def combine_similar_states_across_clones(
                         f"Merging states {[p1,p2]} in clone {c1} and clone {c2}. NP statistics = {t_neymanpearson}"
                     )
     return res
-
-
-# def similarity_components_rdrbaf_neymanpearson_posterior(X, base_nb_mean, total_bb_RD, res, threshold=2.0, minlength=10, topk=10, params="smp", tumor_prop=None, hmmclass=hmm_sitewise):
-#     n_obs = X.shape[0]
-#     n_states = res["new_p_binom"].shape[0]
-#     n_clones = X.shape[2]
-#     G = nx.Graph()
-#     G.add_nodes_from( np.arange(n_clones) )
-#     #
-#     def eval_neymanpearson_bafonly(log_emission_baf_c1, log_gamma_c1, log_emission_baf_c2, log_gamma_c2, bidx, n_states, res, p):
-#         assert log_emission_baf_c1.shape[0] == n_states or log_emission_baf_c1.shape[0] == 2 * n_states
-#         # likelihood under the corresponding state
-#         llf_original = np.append(scipy.special.logsumexp(log_emission_baf_c1[:, bidx] + log_gamma_c1[:, bidx], axis=0),
-#                                  scipy.special.logsumexp(log_emission_baf_c2[:, bidx] + log_gamma_c2[:, bidx], axis=0))
-#         # likelihood under the switched state
-#         if log_emission_baf_c1.shape[0] == 2 * n_states:
-#             whether_switch = False
-#             pred_c1 = np.argmax(log_gamma_c1[:,bidx[0]])
-#             pred_c2 = np.argmax(log_gamma_c2[:,bidx[0]])
-#             if ( ((res["new_p_binom"][p[0],0] > 0.5) == (res["new_p_binom"][p[1],0] > 0.5)) ^ ((pred_c1 < n_states) == (pred_c2 < n_states)) ):
-#                 whether_switch = True
-#             if not whether_switch:
-#                 switch_log_gamma_c1 = log_gamma_c2
-#                 switch_log_gamma_c2 = log_gamma_c1
-#             else:
-#                 switch_log_gamma_c1 = np.vstack([log_gamma_c2[:n_states,:], log_gamma_c2[n_states:,:]])
-#                 switch_log_gamma_c2 = np.vstack([log_gamma_c1[:n_states,:], log_gamma_c1[n_states:,:]])
-#         else:
-#             switch_log_gamma_c1 = log_gamma_c2
-#             switch_log_gamma_c2 = log_gamma_c1
-#         llf_switch = np.append(scipy.special.logsumexp(log_emission_baf_c1[:, bidx] + switch_log_gamma_c1[:, bidx], axis=0),
-#                                scipy.special.logsumexp(log_emission_baf_c2[:, bidx] + switch_log_gamma_c2[:, bidx], axis=0))
-#         # log likelihood difference
-#         return np.mean(llf_original) - np.mean(llf_switch)
-#     #
-#     def eval_neymanpearson_rdrbaf(log_emission_rdr_c1, log_emission_baf_c1, log_gamma_c1, log_emission_rdr_c2, log_emission_baf_c2, log_gamma_c2, bidx, n_states, res, p):
-#         assert log_emission_baf_c1.shape[0] == n_states or log_emission_baf_c1.shape[0] == 2 * n_states
-#         # likelihood under the corresponding state
-#         llf_original = 0.5 * np.append(scipy.special.logsumexp((log_emission_rdr_c1+log_emission_baf_c1)[:, bidx] + log_gamma_c1[:, bidx], axis=0), \
-#                                        scipy.special.logsumexp((log_emission_rdr_c2+log_emission_baf_c2)[:, bidx] + log_gamma_c2[:, bidx], axis=0))
-#         # likelihood under the switched state
-#         if log_emission_baf_c1.shape[0] == 2 * n_states:
-#             whether_switch = False
-#             pred_c1 = np.argmax(log_gamma_c1[:,bidx[0]])
-#             pred_c2 = np.argmax(log_gamma_c2[:,bidx[0]])
-#             if ( ((res["new_p_binom"][p[0],0] > 0.5) == (res["new_p_binom"][p[1],0] > 0.5)) ^ ((pred_c1 < n_states) == (pred_c2 < n_states)) ):
-#                 whether_switch = True
-#             if not whether_switch:
-#                 switch_log_gamma_c1 = log_gamma_c2
-#                 switch_log_gamma_c2 = log_gamma_c1
-#             else:
-#                 switch_log_gamma_c1 = np.vstack([log_gamma_c2[:n_states,:], log_gamma_c2[n_states:,:]])
-#                 switch_log_gamma_c2 = np.vstack([log_gamma_c1[:n_states,:], log_gamma_c1[n_states:,:]])
-#         else:
-#             switch_log_gamma_c1 = log_gamma_c2
-#             switch_log_gamma_c2 = log_gamma_c1
-#         llf_switch = 0.5 * np.append(scipy.special.logsumexp((log_emission_rdr_c1+log_emission_baf_c1)[:, bidx] + switch_log_gamma_c1[:, bidx], axis=0), \
-#                                      scipy.special.logsumexp((log_emission_rdr_c2+log_emission_baf_c2)[:, bidx] + switch_log_gamma_c2[:, bidx], axis=0))
-#         # log likelihood difference
-#         return np.mean(llf_original) - np.mean(llf_switch)
-#     #
-#     if tumor_prop is None:
-#         log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(np.vstack([X[:,0,:].flatten("F"), X[:,1,:].flatten("F")]).T.reshape(-1,2,1), \
-#             base_nb_mean.flatten("F").reshape(-1,1), res["new_log_mu"], res["new_alphas"], \
-#             total_bb_RD.flatten("F").reshape(-1,1), res["new_p_binom"], res["new_taus"])
-#     else:
-#         log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(np.vstack([X[:,0,:].flatten("F"), X[:,1,:].flatten("F")]).T.reshape(-1,2,1), \
-#             base_nb_mean.flatten("F").reshape(-1,1), res["new_log_mu"], res["new_alphas"], \
-#             total_bb_RD.flatten("F").reshape(-1,1), res["new_p_binom"], res["new_taus"], tumor_prop)
-#     log_emission_rdr = log_emission_rdr.reshape((log_emission_rdr.shape[0], n_obs, n_clones), order="F")
-#     log_emission_baf = log_emission_baf.reshape((log_emission_baf.shape[0], n_obs, n_clones), order="F")
-#     reshaped_pred = np.argmax(res["log_gamma"], axis=0).reshape((X.shape[2],-1))
-#     reshaped_pred_cnv = reshaped_pred % n_states
-#     reshaped_log_gamma = np.stack([ res["log_gamma"][:,(c*n_obs):(c*n_obs + n_obs)] for c in range(n_clones) ], axis=-1)
-#     for c1 in range(n_clones):
-#         for c2 in range(c1+1, n_clones):
-#             # unmergeable_bincount = 0
-#             unique_pair_states = [x for x in np.unique(reshaped_pred_cnv[np.array([c1,c2]), :], axis=1).T if x[0] != x[1]]
-#             list_t_neymanpearson = []
-#             for p in unique_pair_states:
-#                 bidx = np.where( (reshaped_pred_cnv[c1,:]==p[0]) & (reshaped_pred_cnv[c2,:]==p[1]) )[0]
-#                 if "m" in params and "p" in params:
-#                     t_neymanpearson = eval_neymanpearson_rdrbaf(log_emission_rdr[:,:,c1], log_emission_baf[:,:,c1], reshaped_log_gamma[:,:,c1], log_emission_rdr[:,:,c2], log_emission_baf[:,:,c2], reshaped_log_gamma[:,:,c2], bidx, n_states, res, p)
-#                 elif "p" in params:
-#                     t_neymanpearson = eval_neymanpearson_bafonly(log_emission_baf[:,:,c1], reshaped_log_gamma[:,:,c1], log_emission_baf[:,:,c2], reshaped_log_gamma[:,:,c2], bidx, n_states, res, p)
-#                 # if t_neymanpearson > threshold:
-#                 #     unmergeable_bincount += len(bidx)
-#                 print(c1, c2, p, len(bidx), t_neymanpearson)
-#                 if len(bidx) >= minlength:
-#                     list_t_neymanpearson.append(t_neymanpearson)
-#             if len(list_t_neymanpearson) == 0 or np.max(list_t_neymanpearson) < threshold:
-#                 max_v = np.max(list_t_neymanpearson) if len(list_t_neymanpearson) > 0 else 1e-3
-#                 G.add_weighted_edges_from([ (c1, c2, max_v) ])
-#             # if unmergeable_bincount < topk:
-#             #     G.add_edge(c1, c2)
-#     # maximal cliques
-#     cliques = []
-#     for x in nx.find_cliques(G):
-#         this_len = len(x)
-#         this_weights = np.sum([G.get_edge_data(a,b)["weight"] for a in x for b in x if a != b]) / 2
-#         cliques.append( (x, this_len, this_weights) )
-#     cliques.sort(key = lambda x:(-x[1],x[2]) )
-#     covered_nodes = set()
-#     merging_groups = []
-#     for c in cliques:
-#         if len(set(c[0]) & covered_nodes) == 0:
-#             merging_groups.append( list(c[0]) )
-#             covered_nodes = covered_nodes | set(c[0])
-#     for c in range(n_clones):
-#         if not (c in covered_nodes):
-#             merging_groups.append( [c] )
-#             covered_nodes.add(c)
-#     merging_groups.sort(key = lambda x:np.min(x))
-#     # clone assignment after merging
-#     map_clone_id = {}
-#     for i,x in enumerate(merging_groups):
-#         for z in x:
-#             map_clone_id[z] = i
-#     new_assignment = np.array([map_clone_id[x] for x in res["new_assignment"]])
-#     merged_res = copy.copy(res)
-#     merged_res["new_assignment"] = new_assignment
-#     merged_res["total_llf"] = np.NAN
-#     merged_res["pred_cnv"] = np.concatenate([ res["pred_cnv"][(c[0]*n_obs):(c[0]*n_obs+n_obs)] for c in merging_groups ])
-#     merged_res["log_gamma"] = np.hstack([ res["log_gamma"][:, (c[0]*n_obs):(c[0]*n_obs+n_obs)] for c in merging_groups ])
-#     return merging_groups, merged_res

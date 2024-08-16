@@ -2,10 +2,12 @@ import numpy as np
 from numba import njit
 import copy
 import scipy.special
+from numba import njit
 from tqdm import trange
 from sklearn.mixture import GaussianMixture
 from calicost.utils_distribution_fitting import *
 
+logger = logging.getLogger(__name__)
 
 @njit
 def np_max_ax_squeeze(arr, axis=0):
@@ -465,13 +467,17 @@ def update_emission_params_nb_sitewise_uniqvalues(
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
-    # initialization
+
+    logger.info("Computing emission params for Negative Binomial (sitewise, unique) with {n_spots} spots and {n_states} states.")
+    
     new_log_mu = (
         copy.copy(start_log_mu)
         if not start_log_mu is None
         else np.zeros((n_states, n_spots))
     )
+    
     new_alphas = copy.copy(alphas)
+
     # expression signal by NB distribution
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
@@ -545,6 +551,7 @@ def update_emission_params_nb_sitewise_uniqvalues(
             weights = []
             features = []
             state_posweights = []
+            
             for s in range(n_spots):
                 idx_nonzero = np.where(unique_values[s][:, 1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero, 1], n_states)
@@ -580,21 +587,31 @@ def update_emission_params_nb_sitewise_uniqvalues(
                     this_features[idx_row_posweight, :][:, idx_state_posweight]
                 )
                 state_posweights.append(idx_state_posweight)
+                
             exposure = np.concatenate(exposure)
             y = np.concatenate(y)
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
+            
             model = Weighted_NegativeBinomial(
                 y, features, weights=weights, exposure=exposure
             )
-            res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
+
+            logger.info("Applying fit with default start params.")
+            
+            res = model.fit(disp=0, maxiter=1_500, xtol=1.e-4, ftol=1.e-4)
+            
             for s, idx_state_posweight in enumerate(state_posweights):
                 l1 = int(np.sum([len(x) for x in state_posweights[:s]]))
                 l2 = int(np.sum([len(x) for x in state_posweights[: (s + 1)]]))
                 new_log_mu[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_alphas[:, :] = res.params[-1]
+                
             if not (start_log_mu is None):
+                logger.info("Applying fit with custom start params.")
+                
                 res2 = model.fit(
                     disp=0,
                     maxiter=1500,
@@ -608,15 +625,26 @@ def update_emission_params_nb_sitewise_uniqvalues(
                     xtol=1e-4,
                     ftol=1e-4,
                 )
-                if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
+
+                nloglikeobs2 = model.nloglikeobs(res2.params)
+                nloglikeobs = model.nloglikeobs(res.params)
+
+                logger.info(f"Comparing loglike for params2 of {nloglikeobs2:.6e} to params1 {nloglikeobs:.6e}.")
+                
+                if nloglikeobs2 < nloglikeobs:
                     for s, idx_state_posweight in enumerate(state_posweights):
                         l1 = int(np.sum([len(x) for x in state_posweights[:s]]))
                         l2 = int(np.sum([len(x) for x in state_posweights[: (s + 1)]]))
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
+                        
                     if res2.params[-1] > 0:
                         new_alphas[:, :] = res2.params[-1]
+                        
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+
+    logger.info("Computed emission params for Negative Binomial (sitewise, unique) with {n_spots} spots and {n_states} states.")
+
     return new_log_mu, new_alphas
 
 
@@ -648,6 +676,9 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
+
+    logger.info("Computing emission params for Negative Binomial Mix (sitewise, unique) for {n_spots} spots and {n_states} states.")
+    
     # initialization
     new_log_mu = (
         copy.copy(start_log_mu)
@@ -822,6 +853,9 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
                         new_alphas[:, :] = res2.params[-1]
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+
+    logger.info("Computed emission params for Negative Binomial Mix (sitewise, unique) for {n_spots} spots and {n_states} states.")
+
     return new_log_mu, new_alphas
 
 
@@ -853,6 +887,9 @@ def update_emission_params_bb_sitewise_uniqvalues(
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
+
+    logger.info("Computing emission params for Beta Binomial (sitewise, unique) for {n_spots} spots and {n_states} states.")
+    
     # initialization
     new_p_binom = (
         copy.copy(start_p_binom)
@@ -1042,6 +1079,9 @@ def update_emission_params_bb_sitewise_uniqvalues(
                         new_taus[:, :] = res2.params[-1]
     new_p_binom[new_p_binom < min_binom_prob] = min_binom_prob
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
+
+    logger.info("Computed emission params for Beta Binomial (sitewise, unique) for {n_spots} spots and {n_states} states.")
+
     return new_p_binom, new_taus
 
 
@@ -1074,6 +1114,9 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(
     n_spots = len(unique_values)
     n_states = int(log_gamma.shape[0] / 2)
     gamma = np.exp(log_gamma)
+
+    logger.info("Computing emission params for Beta Binomial Mix (sitewise, unique) for {n_spots} spots and {n_states} states.")
+    
     # initialization
     new_p_binom = (
         copy.copy(start_p_binom)
@@ -1293,6 +1336,9 @@ def update_emission_params_bb_sitewise_uniqvalues_mix(
                         new_taus[:, :] = res2.params[-1]
     new_p_binom[new_p_binom < min_binom_prob] = min_binom_prob
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
+
+    logger.info("Computed emission params for Beta Binomial Mix (sitewise, unique) for {n_spots} spots and {n_states} states.")
+
     return new_p_binom, new_taus
 
 
@@ -1381,6 +1427,9 @@ def update_emission_params_nb_nophasing_uniqvalues(
     base_nb_mean : array, shape (n_observations, n_spots)
         Mean expression under diploid state.
     """
+
+    logger.info("Computing emission params for Negative Binomial (no phasing, unique).")
+
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
@@ -1532,6 +1581,9 @@ def update_emission_params_nb_nophasing_uniqvalues(
                         new_alphas[:, :] = res2.params[-1]
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+
+    logger.info("Computed emission params for Negative Binomial (no phasing, unique).")
+
     return new_log_mu, new_alphas
 
 
@@ -1559,6 +1611,8 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(
     base_nb_mean : array, shape (n_observations, n_spots)
         Mean expression under diploid state.
     """
+    logger.info("Computing emission params for Negative Binomial Mix (no phasing, unique).")
+
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
@@ -1733,6 +1787,9 @@ def update_emission_params_nb_nophasing_uniqvalues_mix(
                         new_alphas[:, :] = res2.params[-1]
     new_log_mu[new_log_mu > max_log_rdr] = max_log_rdr
     new_log_mu[new_log_mu < min_log_rdr] = min_log_rdr
+
+    logger.info("Computed emission params for Negative Binomial Mix (no phasing, unique).")
+
     return new_log_mu, new_alphas
 
 
@@ -1760,16 +1817,20 @@ def update_emission_params_bb_nophasing_uniqvalues(
     total_bb_RD : array, shape (n_observations, n_spots)
         SNP-covering reads for both REF and ALT across genes along genome.
     """
+    logger.info("Computing emission params for Beta Binomial (no phasing, unique).")
+
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
-    # initialization
+    
+    # NB initialization
     new_p_binom = (
         copy.copy(start_p_binom)
         if not start_p_binom is None
         else np.ones((n_states, n_spots)) * 0.5
     )
     new_taus = copy.copy(taus)
+    
     if fix_BB_dispersion:
         for s in np.arange(len(unique_values)):
             tmp = (scipy.sparse.csr_matrix(gamma) @ mapping_matrices[s]).A
@@ -1845,6 +1906,7 @@ def update_emission_params_bb_nophasing_uniqvalues(
             weights = []
             features = []
             state_posweights = []
+            
             for s in np.arange(len(unique_values)):
                 idx_nonzero = np.where(unique_values[s][:, 1] > 0)[0]
                 this_exposure = np.tile(unique_values[s][idx_nonzero, 1], n_states)
@@ -1876,18 +1938,25 @@ def update_emission_params_bb_nophasing_uniqvalues(
                     this_features[idx_row_posweight, :][:, idx_state_posweight]
                 )
                 state_posweights.append(idx_state_posweight)
+                
             exposure = np.concatenate(exposure)
             y = np.concatenate(y)
             weights = np.concatenate(weights)
             features = scipy.linalg.block_diag(*features)
+
+            
+            
             model = Weighted_BetaBinom(y, features, weights=weights, exposure=exposure)
             res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
+            
             for s, idx_state_posweight in enumerate(state_posweights):
                 l1 = int(np.sum([len(x) for x in state_posweights[:s]]))
                 l2 = int(np.sum([len(x) for x in state_posweights[: (s + 1)]]))
                 new_p_binom[idx_state_posweight, s] = res.params[l1:l2]
+                
             if res.params[-1] > 0:
                 new_taus[:, :] = res.params[-1]
+                
             if not (start_p_binom is None):
                 res2 = model.fit(
                     disp=0,
@@ -1902,16 +1971,21 @@ def update_emission_params_bb_nophasing_uniqvalues(
                     xtol=1e-4,
                     ftol=1e-4,
                 )
+                
                 if model.nloglikeobs(res2.params) < model.nloglikeobs(res.params):
                     for s, idx_state_posweight in enumerate(state_posweights):
                         l1 = int(np.sum([len(x) for x in state_posweights[:s]]))
                         l2 = int(np.sum([len(x) for x in state_posweights[: (s + 1)]]))
                         new_p_binom[idx_state_posweight, s] = res2.params[l1:l2]
+                        
                     if res2.params[-1] > 0:
                         new_taus[:, :] = res2.params[-1]
 
     new_p_binom[new_p_binom < min_binom_prob] = min_binom_prob
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
+
+    logger.info("Computed emission params for Beta Binomial (no phasing, unique).")
+
     return new_p_binom, new_taus
 
 
@@ -1940,10 +2014,13 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(
     total_bb_RD : array, shape (n_observations, n_spots)
         SNP-covering reads for both REF and ALT across genes along genome.
     """
+    logger.info("Computing emission params for Beta Binomial Mix (no phasing, unique).")
+
     n_spots = len(unique_values)
     n_states = log_gamma.shape[0]
     gamma = np.exp(log_gamma)
-    # initialization
+    
+    # NB initialization
     new_p_binom = (
         copy.copy(start_p_binom)
         if not start_p_binom is None
@@ -2121,4 +2198,7 @@ def update_emission_params_bb_nophasing_uniqvalues_mix(
                         new_taus[:, :] = res2.params[-1]
     new_p_binom[new_p_binom < min_binom_prob] = min_binom_prob
     new_p_binom[new_p_binom > max_binom_prob] = max_binom_prob
+
+    logger.info("Computed emission params for Beta Binomial Mix (no phasing, unique).")
+
     return new_p_binom, new_taus
