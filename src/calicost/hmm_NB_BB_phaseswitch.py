@@ -443,7 +443,7 @@ class hmm_sitewise(object):
         last_pred_states = None
 
         for r in range(max_iter):
-            logger.info("-" * 250)
+            logger.info("-" * 50)
             logger.info(
                 f"Calculating E-step (sitewise) for iteration {r} of {max_iter}."
             )
@@ -605,7 +605,7 @@ class hmm_sitewise(object):
         logger.info(f"Fitted (mu, p):\n{np.hstack([new_log_mu, new_p_binom])}")
         logger.info(f"Fitted (alphas, taus):\n{np.hstack([new_alphas, new_taus])}")
 
-        logger.info("-" * 250)
+        logger.info("-" * 50)
         
         return (
             new_log_mu,
