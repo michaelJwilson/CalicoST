@@ -198,7 +198,6 @@ def load_default_config():
 
 
 def read_configuration_file(filename):
-    ##### [Default settings] #####
     (
         config_shared,
         config_joint,
@@ -209,6 +208,7 @@ def read_configuration_file(filename):
         _,
         _,
     ) = load_default_config()
+    
     config = {**config_shared, **config_single}
     argument_type = {**argtype_shared, **argtype_single}
 
@@ -217,14 +217,15 @@ def read_configuration_file(filename):
         for line in fp:
             if line.strip() == "" or line[0] == "#":
                 continue
+            
             strs = [x.strip() for x in line.strip().split(":") if x != ""]
-            # assert strs[0] in config.keys(), f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}"
+            
             if (not strs[0] in config.keys()) and (not strs[0] in config_joint.keys()):
-                # warning that the argument is not a valid configuration parameter and continue
                 logger.warning(
-                    f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}"
+                    f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}.  Error derived from line:\n{line}"
                 )
                 continue
+            
             if len(strs) == 1:
                 config[strs[0]] = []
             elif strs[1].upper() == "NONE":
@@ -241,7 +242,7 @@ def read_configuration_file(filename):
                 config[strs[0]] = strs[1].upper() == "TRUE"
             elif argument_type[strs[0]] == "list_str":
                 config[strs[0]] = strs[1].split(" ")
-    # assertions
+
     assert not config["spaceranger_dir"] is None, "No spaceranger directory!"
     assert not config["snp_dir"] is None, "No SNP directory!"
     assert not config["output_dir"] is None, "No output directory!"
@@ -250,7 +251,6 @@ def read_configuration_file(filename):
 
 
 def read_joint_configuration_file(filename):
-    ##### [Default settings] #####
     (
         config_shared,
         config_joint,
@@ -261,6 +261,7 @@ def read_joint_configuration_file(filename):
         _,
         _,
     ) = load_default_config()
+    
     config = {**config_shared, **config_joint}
     argument_type = {**argtype_shared, **argtype_joint}
 
@@ -269,14 +270,15 @@ def read_joint_configuration_file(filename):
         for line in fp:
             if line.strip() == "" or line[0] == "#":
                 continue
+            
             strs = [x.strip() for x in line.strip().split(":") if x != ""]
-            # assert strs[0] in config.keys(), f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}"
+            
             if (not strs[0] in config.keys()) and (not strs[0] in config_single.keys()):
-                # warning that the argument is not a valid configuration parameter and continue
                 logger.warning(
-                    f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}"
+                    f"{strs[0]} is not a valid configuration parameter! Configuration parameters are: {list(config.keys())}.  Error derived from line:\n{line}"
                 )
                 continue
+            
             if len(strs) == 1:
                 config[strs[0]] = []
             elif strs[1].upper() == "NONE":
@@ -293,7 +295,7 @@ def read_joint_configuration_file(filename):
                 config[strs[0]] = strs[1].upper() == "TRUE"
             elif argument_type[strs[0]] == "list_str":
                 config[strs[0]] = strs[1].split(" ")
-    # assertions
+    
     assert not config["input_filelist"] is None, "No input file list!"
     assert not config["snp_dir"] is None, "No SNP directory!"
     assert not config["output_dir"] is None, "No output directory!"
