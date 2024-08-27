@@ -76,12 +76,10 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     exposure : array, (n_samples,)
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
-
     def __init__(self, endog, exog, weights, exposure, tumor_prop=None, seed=0, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
-
         self.weights = weights
         self.exposure = exposure
 
@@ -250,6 +248,13 @@ class Weighted_NegativeBinomial(WeightedModel):
 
 
 class Weighted_NegativeBinomial_mix(WeightedModel):
+    """                                                                                                                                                                 
+    Negative Binomial model endog ~ NB(exposure * exp(exog @ params[:-1]), params[-1]),                                                                                
+    where exog is the design matrix, and params[-1] is 1 / overdispersion.  This function                                                                               
+    fits the NB params when samples are weighted by weights:                                                                                                                                                                                                                                                                                   
+    max_{params} \sum_{s} weights_s * log P(endog_s | exog_s; params)                                                                                                    
+    Adapated for varying tumor proportion.
+    """
     ninstance = 0
 
     def nloglikeobs(self, params):
@@ -283,7 +288,6 @@ class Weighted_BetaBinom(WeightedModel):
 
     max_{params} \sum_{s} weights_s * log P(endog_s | exog_s; params)
     """
-
     ninstance = 0
 
     def nloglikeobs(self, params):
@@ -307,6 +311,14 @@ class Weighted_BetaBinom(WeightedModel):
 
 
 class Weighted_BetaBinom_mix(WeightedModel):
+    """
+    Beta-binomial model endog ~ BetaBin(exposure, tau * p, tau * (1 - p)),                                                                                             
+    where p = exog @ params[:-1] and tau = params[-1].  This function fits the                                                                                          
+    BetaBin params when samples are weighted by weights:                                                                                                                                                                                                                                                                                        
+    max_{params} \sum_{s} weights_s * log P(endog_s | exog_s; params) 
+
+    Adapated for varying tumor proportion.
+    """
     ninstance = 0
 
     def nloglikeobs(self, params):
