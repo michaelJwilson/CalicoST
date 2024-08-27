@@ -32,16 +32,15 @@ os.environ["MKL_NUM_THREADS"] = num_threads
 os.environ["OPENBLAS_NUM_THREADS"] = num_threads
 os.environ["OMP_NUM_THREADS"] = num_threads
 
-
-def convert_params(mean, std):
+def convert_params(mean, alpha):
     """
     Convert mean/dispersion parameterization of a negative binomial to the ones scipy supports
 
     See https://mathworld.wolfram.com/NegativeBinomialDistribution.html
     """
-    p = mean / std**2
-    n = mean * p / (1.0 - p)
-
+    p = 1.0 / (1.0 + mean * alpha)
+    n = 1.0 / alpha
+    
     return n, p
 
 
@@ -226,9 +225,7 @@ class Weighted_NegativeBinomial(WeightedModel):
 
     def nloglikeobs(self, params):
         nb_mean = np.exp(self.exog @ params[:-1]) * self.exposure
-        nb_std = np.sqrt(nb_mean + params[-1] * nb_mean**2)
-
-        n, p = convert_params(nb_mean, nb_std)
+        n, p = convert_params(nb_mean, params[-1])
 
         return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
 
@@ -256,12 +253,9 @@ class Weighted_NegativeBinomial_mix(WeightedModel):
 
     def nloglikeobs(self, params):
         nb_mean = self.exposure * (
-            self.tumor_prop * np.exp(self.exog @ params[:-1]) + 1 - self.tumor_prop
+            self.tumor_prop * np.exp(self.exog @ params[:-1]) + 1. - self.tumor_prop
         )
-
-        nb_std = np.sqrt(nb_mean + params[-1] * nb_mean**2)
-
-        n, p = convert_params(nb_mean, nb_std)
+        n, p = convert_params(nb_mean, params[-1])
 
         return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
 
