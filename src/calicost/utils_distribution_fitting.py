@@ -76,15 +76,12 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     exposure : array, (n_samples,)
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
-    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, seed=0, **kwargs):
+    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
         self.weights = weights
         self.exposure = exposure
-
-        # NB Weight_BetaBinomial does not specify seed
-        self.seed = seed
 
         # NB __post_init__ validates the expected tumor proportion and handles incrementing instance count.
         self.__post_init__()
@@ -351,7 +348,7 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
     ninstance = 0
 
     # NB custom __init__ required to handle tau.
-    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, seed=0, **kwargs):
+    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
@@ -359,9 +356,6 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
         self.tau = tau
         self.weights = weights
         self.exposure = exposure
-
-        # NB Weighted_BetaBinom_fixdispersion does not specify seed previously.
-        self.seed = seed
 
         self.__post_init__()
 
@@ -388,7 +382,7 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
 
 class Weighted_BetaBinom_fixdispersion_mix(WeightedModel):
     # NB custom __init__ required to handle tau.
-    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, seed=0, **kwargs):
+    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
@@ -396,9 +390,6 @@ class Weighted_BetaBinom_fixdispersion_mix(WeightedModel):
         self.tau = tau
         self.weights = weights
         self.exposure = exposure
-
-        # NB Weighted_BetaBinom_fixdispersion does not specify seed previously.
-        self.seed = seed
 
         self.__post_init__()
 
