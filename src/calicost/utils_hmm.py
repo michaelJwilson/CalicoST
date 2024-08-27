@@ -657,6 +657,8 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
     max_log_rdr=2,
 ):
     """
+    Expression signal by NB distribution
+
     Attributes
     ----------
     X : array, shape (n_observations, n_components, n_spots)
@@ -682,7 +684,6 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
     
     new_alphas = copy.copy(alphas)
    
-    # expression signal by NB distribution
     if fix_NB_dispersion:
         new_log_mu = np.zeros((n_states, n_spots))
         for s in range(n_spots):
@@ -729,7 +730,7 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
                         exposure=unique_values[s][idx_nonzero, 1],
                         tumor_prop=this_tp,
                     )
-                    # tumor_prop=tumor_prop[s], penalty=0)
+
                     res = model.fit(disp=0, maxiter=1500, xtol=1e-4, ftol=1e-4)
                     new_log_mu[i, s] = res.params[0]
                     new_alphas[i, s] = res.params[-1]
@@ -786,7 +787,8 @@ def update_emission_params_nb_sitewise_uniqvalues_mix(
                     this_features[
                         (i * len(idx_nonzero)) : ((i + 1) * len(idx_nonzero)), i
                     ] = 1
-                # only optimize for states where at least 1 SNP belongs to
+                    
+                # NB only optimize for states where at least 1 SNP belongs to
                 idx_state_posweight = np.array(
                     [
                         i
