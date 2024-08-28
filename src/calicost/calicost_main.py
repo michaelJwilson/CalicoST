@@ -26,7 +26,7 @@ from calicost.parse_input import *
 from calicost.utils_plotting import *
 
 # NB prevent wrap-around of log lines due to high precision printing.
-np.set_printoptions(precision=6)
+np.set_printoptions(precision=3)
 
 logger = logging.getLogger("calicost")
 logger.setLevel(logging.INFO)
