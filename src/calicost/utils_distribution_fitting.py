@@ -81,12 +81,13 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         self.tumor_prop = tumor_prop
         self.weights = weights
         self.exposure = exposure
-
+        self.class_balance = np.sum(exog, axis=0)
+        
         # NB __post_init__ validates the expected tumor proportion and handles incrementing instance count.
         self.__post_init__()
 
         logger.info(
-            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape = {endog.shape}."
+            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and class balance={self.class_balance}."
         )
 
     @abstractmethod
@@ -197,7 +198,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                         f"#  {self.__class__.__name__} {ninst} @ {time.asctime()}\n"
                     )
                     fout.write(
-                        f"#  start_type:{start_params_str},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
+                        f"#  start_type:{start_params_str},class_balance:{self.class_balance},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
                         + ",".join(
                             f"{key}:{value}"
                             for key, value in result.mle_retvals.items()
@@ -308,9 +309,7 @@ class Weighted_BetaBinom(WeightedModel):
         assert self.tumor_prop is None
         
         Weighted_BetaBinom.ninstance += 1
-
-        breakpoint()
-        
+      
 
 class Weighted_BetaBinom_mix(WeightedModel):
     """
