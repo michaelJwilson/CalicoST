@@ -82,12 +82,13 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         self.weights = weights
         self.exposure = exposure
         self.class_balance = np.sum(exog, axis=0)
+        self.class_balance_weights = exog.T @ weights
         
         # NB __post_init__ validates the expected tumor proportion and handles incrementing instance count.
         self.__post_init__()
 
         logger.info(
-            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and class balance={self.class_balance}."
+            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and class balance={self.class_balance} (weighted={self.class_balance_weights})."
         )
 
     @abstractmethod
@@ -197,8 +198,9 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                     fout.write(
                         f"#  {self.__class__.__name__} {ninst} @ {time.asctime()}\n"
                     )
+                    
                     fout.write(
-                        f"#  start_type:{start_params_str},class_balance:{self.class_balance},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
+                        f"#  start_type:{start_params_str},class_balance:{self.class_balance},class_balance_weighted:{self.class_balance_weights},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
                         + ",".join(
                             f"{key}:{value}"
                             for key, value in result.mle_retvals.items()
