@@ -246,7 +246,9 @@ class Weighted_NegativeBinomial_mix(WeightedModel):
     Negative Binomial model endog ~ NB(exposure * exp(exog @ params[:-1]), params[-1]),                                                                                
     where exog is the design matrix, and params[-1] is 1 / overdispersion.  This function                                                                               
     fits the NB params when samples are weighted by weights:                                                                                                                                                                                                                                                                                   
+
     max_{params} \sum_{s} weights_s * log P(endog_s | exog_s; params)                                                                                                    
+
     Adapated for varying tumor proportion.
     """
     ninstance = 0
@@ -255,8 +257,14 @@ class Weighted_NegativeBinomial_mix(WeightedModel):
         nb_mean = self.exposure * (
             self.tumor_prop * np.exp(self.exog @ params[:-1]) + 1. - self.tumor_prop
         )
+
+        # NB n == number of success, p == probability of a single success.
         n, p = convert_params(nb_mean, params[-1])
 
+        # NB endog == , exposure                                                                                                                                                                                                                                                                                                                                       
+        #                                                                                                                                                                                                                                                                                                                                                              
+	#    see https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.nbinom.html  
+        
         return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
 
     def get_default_start_params(self):
@@ -284,7 +292,7 @@ class Weighted_BetaBinom(WeightedModel):
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1]) * params[-1]
         b = (1.0 - self.exog @ params[:-1]) * params[-1]
-
+        
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(
             self.weights
         )
