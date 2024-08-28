@@ -622,6 +622,7 @@ def update_emission_params_nb_sitewise_uniqvalues(
                     for s, idx_state_posweight in enumerate(state_posweights):
                         l1 = int(np.sum([len(x) for x in state_posweights[:s]]))
                         l2 = int(np.sum([len(x) for x in state_posweights[: (s + 1)]]))
+                        
                         new_log_mu[idx_state_posweight, s] = res2.params[l1:l2]
                         
                     if res2.params[-1] > 0:
