@@ -165,7 +165,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
 
         # TODO mkdir chains 
         class_name = self.__class__.__name__.lower()
-        final_path = f"chains/{class_name}/{class_name}_chain_{ninst}.txt.gzip"
+        final_path = f"chains/{class_name}/{class_name}_chain_{ninst}_{start_params_str}.txt.gzip"
 
         Path(final_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -298,6 +298,7 @@ class Weighted_BetaBinom(WeightedModel):
         )
 
     def get_default_start_params(self):
+        # TODO remove number of states.
         return np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
 
     def get_ext_param_name(self):
@@ -308,6 +309,8 @@ class Weighted_BetaBinom(WeightedModel):
         
         Weighted_BetaBinom.ninstance += 1
 
+        breakpoint()
+        
 
 class Weighted_BetaBinom_mix(WeightedModel):
     """
