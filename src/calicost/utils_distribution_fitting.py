@@ -135,7 +135,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         start_params=None,
         maxiter=1_500,
         maxfun=5_000,
-        xtol=1.e-4,
+        xtol=1.e-2,
         ftol=1.e-4,   
         write_chain=True,
         **kwargs,
