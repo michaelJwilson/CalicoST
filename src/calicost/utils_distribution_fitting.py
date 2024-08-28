@@ -133,8 +133,10 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     def fit(
         self,
         start_params=None,
-        maxiter=10_000,
+        maxiter=1_500,
         maxfun=5_000,
+        xtol=1.e-4,
+        ftol=1.e-4,   
         write_chain=True,
         **kwargs,
     ):
@@ -157,7 +159,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         )
 
         start = time.time()
-
+        
         # NB kwargs = {'xtol': 0.0001, 'ftol': 0.0001, disp: False}
         kwargs.pop("disp", None)
 
@@ -181,6 +183,8 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 full_output=True,
                 retall=True,
                 disp=False,
+                xtol=xtol,
+                ftol=ftol,
                 **kwargs,
             )
 
