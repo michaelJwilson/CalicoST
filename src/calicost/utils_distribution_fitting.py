@@ -135,7 +135,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         start_params=None,
         maxiter=1_500,
         maxfun=5_000,
-        xtol=1.e-2,
+        xtol=1.e-3,
         ftol=1.e-4,   
         write_chain=True,
         **kwargs,
@@ -160,7 +160,6 @@ class WeightedModel(GenericLikelihoodModel, ABC):
 
         start = time.time()
         
-        # NB kwargs = {'xtol': 0.0001, 'ftol': 0.0001, disp: False}
         kwargs.pop("disp", None)
 
         tmp_path = f"{self.__class__.__name__.lower()}_chain.tmp"
