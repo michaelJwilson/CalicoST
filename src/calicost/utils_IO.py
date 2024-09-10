@@ -1531,7 +1531,7 @@ def bin_selection_basedon_normal(
     model = Weighted_BetaBinom(
         tmpX, np.ones(len(tmpX)), weights=np.ones(len(tmpX)), exposure=tmptotal_bb_RD
     )
-    tmpres = model.fit(disp=0)
+    tmpres = model.fit()
     tmpres.params[0] = 0.5
     tmpres.params[-1] = max(tmpres.params[-1], min_betabinom_tau)
     # remove bins if normal B allele frequencies fall out of 5%-95% probability range
