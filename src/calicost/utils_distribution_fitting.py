@@ -75,12 +75,14 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     exposure : array, (n_samples,)
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
-    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, **kwargs):
+    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, method="nm", **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
         self.weights = weights
         self.exposure = exposure
+        self.method = method
+        self.bounds = None
         self.class_balance = np.sum(exog, axis=0)
         self.class_balance_weights = exog.T @ weights
         
@@ -124,6 +126,9 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         """
         return self.ninstance
 
+    def get_nparams(self):
+        return len(self.get_default_start_params())
+        
     def __callback__(self, params):
         """
         Define callback for writing parameter chain to file.
@@ -138,7 +143,6 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         xtol=1.e-2,
         ftol=1.e-2,   
         write_chain=True,
-        method="nm", 
         **kwargs,
     ):
         ext_param_name = self.get_ext_param_name()
@@ -185,7 +189,8 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 disp=False,
                 xtol=xtol,
                 ftol=ftol,
-                method=method,
+                method=self.method,
+                bounds=self.bounds,
                 **kwargs,
             )
 
@@ -244,6 +249,9 @@ class Weighted_NegativeBinomial(WeightedModel):
         return "alpha"
 
     def __post_init__(self):
+        self.method = "lbfgs"
+        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        
         assert self.tumor_prop is None
         
         Weighted_NegativeBinomial.ninstance += 1
@@ -282,6 +290,9 @@ class Weighted_NegativeBinomial_mix(WeightedModel):
         return "alpha"
 
     def __post_init__(self):
+        self.method = "lbfgs"
+        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        
         assert self.tumor_prop is not None, "Tumor proportion must be defined."
 
         Weighted_NegativeBinomial_mix.ninstance += 1
@@ -298,8 +309,8 @@ class Weighted_BetaBinom(WeightedModel):
     ninstance = 0
 
     def nloglikeobs(self, params):
-        a = (self.exog @ params[:-1]) * params[-1]
-        b = (1.0 - self.exog @ params[:-1]) * params[-1]
+        a = (self.exog @ params[:-1]) * np.exp(params[-1])
+        b = (1.0 - self.exog @ params[:-1]) * np.exp(params[-1])
         
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(
             self.weights
@@ -307,12 +318,16 @@ class Weighted_BetaBinom(WeightedModel):
 
     def get_default_start_params(self):
         # TODO remove number of states.
-        return np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
+        # DEPRECATE np.sum(self.exog.shape[1])
+        return np.append(0.5 / np.ones(self.nparams), 0.)
 
     def get_ext_param_name(self):
         return "tau"
 
     def __post_init__(self):
+        self.method = "lbfgs"
+        # self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        
         assert self.tumor_prop is None
         
         Weighted_BetaBinom.ninstance += 1
@@ -332,24 +347,28 @@ class Weighted_BetaBinom_mix(WeightedModel):
     def nloglikeobs(self, params):
         a = (
             self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1 - self.tumor_prop)
-        ) * params[-1]
+        ) * np.exp(params[-1])
 
         b = (
             (1 - self.exog @ params[:-1]) * self.tumor_prop
             + 0.5 * (1 - self.tumor_prop)
-        ) * params[-1]
+        ) * np.exp(params[-1])
 
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(
             self.weights
         )
 
     def get_default_start_params(self):
-        return np.append(0.5 / np.sum(self.exog.shape[1]) * np.ones(self.nparams), 1)
+        # DEPRECATE np.sum(self.exog.shape[1])
+        return np.append(0.5 * np.ones(self.nparams), 0)
 
     def get_ext_param_name(self):
         return "tau"
 
     def __post_init__(self):
+        self.method = "lbfgs"
+        # self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        
         assert self.tumor_prop is not None, "Tumor proportion must be defined."
 
         Weighted_BetaBinom_mix.ninstance += 1

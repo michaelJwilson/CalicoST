@@ -82,7 +82,7 @@ def main(configuration_file):
         smooth_mat,
         exp_counts,
     ) = run_parse_n_load(config)
-
+    """
     if single_tumor_prop is not None:
         normal_frac = np.mean(single_tumor_prop < 0.2)
     
@@ -179,7 +179,7 @@ def main(configuration_file):
         print(new_alphas)
         
         exit(0)
-    
+    """
     logger.info(f"****  ESTIMATING INITIAL CLONES USING BAF ONLY  ****")
 
     # NB setting transcript & baseline count to 0 so the emission probability will be ignored.
