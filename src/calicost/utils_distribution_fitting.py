@@ -140,8 +140,8 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         start_params=None,
         maxiter=1_500,
         maxfun=5_000,
-        xtol=1.e-2,
-        ftol=1.e-2,   
+        xtol=1.e-4,
+        ftol=1.e-4,   
         write_chain=True,
         **kwargs,
     ):
@@ -149,6 +149,8 @@ class WeightedModel(GenericLikelihoodModel, ABC):
 
         self.exog_names.append(ext_param_name)
 
+        method = self.method if start_params is None else "nm"
+        
         if start_params is None:
             if hasattr(self, "start_params"):
                 start_params = self.start_params
@@ -158,9 +160,9 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 start_params_str = "default"
         else:
             start_params_str = "input"
-
+            
         logger.info(
-            f"Starting {self.__class__.__name__} optimization @ ({start_params_str}) {start_params}."
+            f"Starting {self.__class__.__name__} {method} optimization @ ({start_params_str}) {start_params}."
         )
 
         start = time.time()
@@ -189,7 +191,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 disp=False,
                 xtol=xtol,
                 ftol=ftol,
-                method=self.method,
+                method=method,
                 bounds=self.bounds,
                 **kwargs,
             )
@@ -309,8 +311,8 @@ class Weighted_BetaBinom(WeightedModel):
     ninstance = 0
 
     def nloglikeobs(self, params):
-        a = (self.exog @ params[:-1]) * np.exp(params[-1])
-        b = (1.0 - self.exog @ params[:-1]) * np.exp(params[-1])
+        a = (self.exog @ params[:-1]) * params[-1]
+        b = (1.0 - self.exog @ params[:-1]) * params[-1]
         
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(
             self.weights
@@ -319,14 +321,14 @@ class Weighted_BetaBinom(WeightedModel):
     def get_default_start_params(self):
         # TODO remove number of states.
         # DEPRECATE np.sum(self.exog.shape[1])
-        return np.append(0.5 / np.ones(self.nparams), 0.)
+        return np.append(0.5 * np.ones(self.nparams), 1.)
 
     def get_ext_param_name(self):
         return "tau"
 
     def __post_init__(self):
         self.method = "lbfgs"
-        # self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
         
         assert self.tumor_prop is None
         
@@ -347,12 +349,12 @@ class Weighted_BetaBinom_mix(WeightedModel):
     def nloglikeobs(self, params):
         a = (
             self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1 - self.tumor_prop)
-        ) * np.exp(params[-1])
+        ) * params[-1]
 
         b = (
             (1 - self.exog @ params[:-1]) * self.tumor_prop
             + 0.5 * (1 - self.tumor_prop)
-        ) * np.exp(params[-1])
+        ) * params[-1]
 
         return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(
             self.weights
@@ -360,14 +362,14 @@ class Weighted_BetaBinom_mix(WeightedModel):
 
     def get_default_start_params(self):
         # DEPRECATE np.sum(self.exog.shape[1])
-        return np.append(0.5 * np.ones(self.nparams), 0)
+        return np.append(0.5 * np.ones(self.nparams), 1)
 
     def get_ext_param_name(self):
         return "tau"
 
     def __post_init__(self):
         self.method = "lbfgs"
-        # self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
         
         assert self.tumor_prop is not None, "Tumor proportion must be defined."
 
