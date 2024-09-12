@@ -40,7 +40,6 @@ handler.setFormatter(formatter)
 
 logger.addHandler(handler)
 
-
 def main(configuration_file):
     start = datetime.datetime.now()
 
@@ -87,7 +86,7 @@ def main(configuration_file):
     if single_tumor_prop is not None:
         normal_frac = np.mean(single_tumor_prop < 0.2)
     
-        logger.info(f"****  ESTIMATING NB EMISSION DISPERSION FOR NORMAL SPOTS ({:.3f} fraction) ****")
+        logger.info(f"****  ESTIMATING NB EMISSION DISPERSION FOR NORMAL SPOTS ({normal_frac:.3f} fraction) ****")
 
         for prop_threshold in np.arange(0.05, 0.6, 0.05):
             normal_candidate = (single_tumor_prop < prop_threshold)

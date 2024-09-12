@@ -138,6 +138,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         xtol=1.e-2,
         ftol=1.e-2,   
         write_chain=True,
+        method="nm", 
         **kwargs,
     ):
         ext_param_name = self.get_ext_param_name()
@@ -184,6 +185,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 disp=False,
                 xtol=xtol,
                 ftol=ftol,
+                method=method,
                 **kwargs,
             )
 
