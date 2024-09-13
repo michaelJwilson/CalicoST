@@ -212,7 +212,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                     )
                     
                     fout.write(
-                        f"#  start_type:{start_params_str},class_balance:{self.class_balance},class_balance_weighted:{self.class_balance_weights},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
+                        f"#  method:{method},start_type:{start_params_str},class_balance:{self.class_balance},class_balance_weighted:{self.class_balance_weights},runtime:{runtime:.6f},shape:{self.endog.shape[0]},"
                         + ",".join(
                             f"{key}:{value}"
                             for key, value in result.mle_retvals.items()
