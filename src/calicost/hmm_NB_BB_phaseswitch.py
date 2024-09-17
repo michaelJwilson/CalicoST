@@ -458,7 +458,7 @@ class hmm_sitewise(object):
             X[:, 1, :], total_bb_RD
         )
 
-        last_pred_states = None
+        last_log_gamma, last_pred_states = None, None
 
         for r in range(max_iter):
             logger.info("-" * 50)
@@ -510,11 +510,47 @@ class hmm_sitewise(object):
             log_xi = compute_posterior_transition_sitewise(
                 log_alpha, log_beta, log_transmat, log_emission
             )
-            
-            log_gamma = compute_posterior_obs(log_alpha, log_beta)
-        
-            pred_states = np.argmax(log_gamma, axis=0)
 
+            log_gamma = compute_posterior_obs(log_alpha, log_beta)
+
+            pred_states = np.argmax(log_gamma, axis=0)
+            
+            # TODO remove_degen flag.
+            if True:
+                phased_log_mu = np.concatenate([log_mu, log_mu])
+                degenerate_states = np.arange(len(phased_log_mu), dtype=int)
+
+                phased_p_binom = np.concatenate([p_binom, 1. - p_binom])
+                
+                for ii, primary in enumerate(phased_log_mu[:-1]):
+                    for jj, _next in enumerate(phased_log_mu[ii+1:]):
+                        baf_primary = phased_p_binom[ii]
+                        baf_next = phased_p_binom[ii + jj + 1]
+
+                        # NB log emission does not include RDR, therefore states are degenerate if BAF is degenerate.
+                        if np.abs(baf_primary - baf_next) < tol:
+                            # if np.abs(primary - _next) < tol:
+                                degenerate_states[ii + jj + 1] = degenerate_states[ii]
+
+                logger.warning(f"Found state degeneracies: {degenerate_states} @ {tol} tolerance for states:\n{phased_log_mu}\n{phased_p_binom}")
+                logger.info(f"Editing posteriors for degenerate states.")
+                
+                huge = np.finfo(np.float64).max
+                
+                for ii, primary in enumerate(degenerate_states):
+                    if primary != ii:
+                        log_gamma[primary, :] = np.log(np.exp(log_gamma[primary, :]) + np.exp(log_gamma[ii, :]))
+
+                        # NB depopulate degenerate state.
+                        log_gamma[ii, :] = -huge
+                        
+                updated_pred_states = np.argmax(log_gamma, axis=0)
+
+                print(np.unique(pred_states, return_counts=True))
+                print(np.unique(updated_pred_states, return_counts=True))
+
+                pred_states = updated_pred_states
+                
             if last_pred_states is not None:
                 ari = adjusted_rand_score(last_pred_states, pred_states)
                 hamm = sum(last_pred_states != pred_states)
@@ -523,8 +559,15 @@ class hmm_sitewise(object):
 
                 # NB 2x n_states states for phasing.
                 logger.info(f"Found state switches:\n{compute_state_switch(log_alpha.shape[0], last_pred_states, pred_states)}")
-                    
+
+            if last_log_gamma is not None:
+                kl_div = np.exp(log_gamma) * (log_gamma - last_log_gamma) / np.log(2)
+                kl_div = np.nansum(kl_div)
+
+                logger.info(f"Found Hidden States (v2) for iteration {r} with KL = {kl_div:.6f}")
+                
             last_pred_states = pred_states
+            last_log_gamma = log_gamma
             
             logger.info(
                 f"Calculating M-step (sitewise) for iteration {r} of {max_iter}."
@@ -610,7 +653,8 @@ class hmm_sitewise(object):
             )
 
             if (
-                np.mean(np.abs(np.exp(new_log_transmat) - np.exp(log_transmat))) < tol
+                True
+                and np.mean(np.abs(np.exp(new_log_transmat) - np.exp(log_transmat))) < tol
                 and np.mean(np.abs(new_log_mu - log_mu)) < tol
                 and np.mean(np.abs(new_p_binom - p_binom)) < tol
             ):
@@ -627,7 +671,8 @@ class hmm_sitewise(object):
 
         logger.info(f"Fitted (mu, p):\n{np.hstack([new_log_mu, new_p_binom])}")
         logger.info(f"Fitted (alphas, taus):\n{np.hstack([new_alphas, new_taus])}")
-
+        logger.info(f"Fitted states:\n{np.unique(pred_states, return_counts=True)}")
+        
         logger.info("-" * 50)
         
         breakpoint()

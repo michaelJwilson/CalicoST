@@ -90,7 +90,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         self.__post_init__()
 
         logger.info(
-            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and weighted class balance={self.class_balance_weights}."
+            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape}, exog.shape={exog.shape} & weighted class balance={self.class_balance_weights}."
         )
 
     @abstractmethod
@@ -249,7 +249,7 @@ class Weighted_NegativeBinomial(WeightedModel):
         return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
 
     def get_default_start_params(self):
-        return np.append(0.1 * np.ones(self.exog.shape[1]), 0.01)
+        return np.append(0.1 * np.ones(self.exog.shape[1]), 1.e-2)
 
     def get_ext_param_name(self):
         return "alpha"
@@ -290,7 +290,7 @@ class Weighted_NegativeBinomial_mix(WeightedModel):
         return -scipy.stats.nbinom.logpmf(self.endog, n, p).dot(self.weights)
 
     def get_default_start_params(self):
-        return np.append(0.1 * np.ones(self.nparams), 0.01)
+        return np.append(0.1 * np.ones(self.exog.shape[1]), 1.e-2)
 
     def get_ext_param_name(self):
         return "alpha"
@@ -325,7 +325,7 @@ class Weighted_BetaBinom(WeightedModel):
     def get_default_start_params(self):
         # TODO remove number of states.
         # DEPRECATE np.sum(self.exog.shape[1])
-        return np.append(0.5 * np.ones(self.nparams), 1.)
+        return np.append(0.5 * np.ones(self.exog.shape[1]), 1.)
 
     def get_ext_param_name(self):
         return "tau"
@@ -366,7 +366,7 @@ class Weighted_BetaBinom_mix(WeightedModel):
 
     def get_default_start_params(self):
         # DEPRECATE np.sum(self.exog.shape[1])
-        return np.append(0.5 * np.ones(self.nparams), 1)
+        return np.append(0.5 * np.ones(self.exog.shape[1]), 1)
 
     def get_ext_param_name(self):
         return "tau"
@@ -408,7 +408,7 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
         )
 
     def get_default_start_params(self):
-        return 0.1 * np.ones(self.nparams)
+        return 0.1 * np.ones(self.exog.shape[1])
 
     def __post_init__(self):
         assert self.tumor_prop is None
@@ -447,7 +447,7 @@ class Weighted_BetaBinom_fixdispersion_mix(WeightedModel):
         )
 
     def get_default_start_params(self):
-        return 0.1 * np.ones(self.nparams)
+        return 0.1 * np.ones(self.exog.shape[1])
 
     def __post_init__(self):
         assert self.tumor_prop is not None, "Tumor proportion must be defined."
