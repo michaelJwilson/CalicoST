@@ -90,7 +90,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         self.__post_init__()
 
         logger.info(
-            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and class balance={self.class_balance} (weighted={self.class_balance_weights})."
+            f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape} and weighted class balance={self.class_balance_weights}."
         )
 
     @abstractmethod
@@ -200,9 +200,13 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         niter = result.mle_retvals["iterations"]
         runtime = time.time() - start
 
+        np.set_printoptions(precision=6)
+        
         logger.info(
             f"{self.__class__.__name__} optimization in {runtime:.2f}s, with {niter} iterations.  Best-fit: {result.params}"
         )
+
+        np.set_printoptions(precision=3)
 
         if write_chain:
             with open(tmp_path) as fin:

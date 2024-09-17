@@ -1,3 +1,11 @@
+import warnings
+
+warnings.filterwarnings("ignore", message="Variable names are not unique. To make them unique, call `.var_names_make_unique`.")
+warnings.filterwarnings("ignore", message="FutureWarning: Keyword arguments have been passed to the optimizer that have no effect.")
+warnings.filterwarnings("ignore", message="df_model + k_constant + k_extra differs from k_params")
+warnings.filterwarnings("ignore", message="df_resid differs from nobs - k_params")
+warnings.filterwarnings("ignore", message="more exog_names than parameters")
+
 import sys
 import numpy as np
 import scipy
@@ -178,7 +186,7 @@ def main(configuration_file):
         print(alphas)
         print(new_alphas)
         
-        exit(0)
+        breakpoint()
     """
     logger.info(f"****  ESTIMATING INITIAL CLONES USING BAF ONLY  ****")
 
