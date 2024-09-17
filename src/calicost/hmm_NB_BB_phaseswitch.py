@@ -396,7 +396,7 @@ class hmm_sitewise(object):
         init_taus=None,
         max_iter=100,
         tol=1.e-4,
-        degen_tol=1.e-2, 
+        degen_tol=1.e-4, 
     ):
         """
         Input
