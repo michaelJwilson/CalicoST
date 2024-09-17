@@ -395,7 +395,8 @@ class hmm_sitewise(object):
         init_alphas=None,
         init_taus=None,
         max_iter=100,
-        tol=1e-4,
+        tol=1.e-4,
+        degen_tol=1.e-2, 
     ):
         """
         Input
@@ -515,8 +516,7 @@ class hmm_sitewise(object):
 
             pred_states = np.argmax(log_gamma, axis=0)
             
-            # TODO remove_degen flag.
-            if True:
+            if degen_tol is not None:
                 phased_log_mu = np.concatenate([log_mu, log_mu])
                 degenerate_states = np.arange(len(phased_log_mu), dtype=int)
 
@@ -528,11 +528,11 @@ class hmm_sitewise(object):
                         baf_next = phased_p_binom[ii + jj + 1]
 
                         # NB log emission does not include RDR, therefore states are degenerate if BAF is degenerate.
-                        if np.abs(baf_primary - baf_next) < tol:
-                            # if np.abs(primary - _next) < tol:
+                        if np.abs(baf_primary - baf_next) < degen_tol:
+                            # if np.abs(primary - _next) < degen_tol:
                                 degenerate_states[ii + jj + 1] = degenerate_states[ii]
 
-                logger.warning(f"Found state degeneracies: {degenerate_states} @ {tol} tolerance for states:\n{phased_log_mu}\n{phased_p_binom}")
+                logger.warning(f"Found state degeneracies: {degenerate_states} @ {degen_tol} tolerance for states:\n{phased_log_mu}\n{phased_p_binom}")
                 logger.info(f"Editing posteriors for degenerate states.")
                 
                 huge = np.finfo(np.float64).max
@@ -564,7 +564,7 @@ class hmm_sitewise(object):
                 kl_div = np.exp(log_gamma) * (log_gamma - last_log_gamma) / np.log(2)
                 kl_div = np.nansum(kl_div)
 
-                logger.info(f"Found Hidden States (v2) for iteration {r} with KL = {kl_div:.6f}")
+                logger.info(f"Found Hidden States (v2) for iteration {r} with KL = {kl_div:.3f} [bits]")
                 
             last_pred_states = pred_states
             last_log_gamma = log_gamma
@@ -675,7 +675,7 @@ class hmm_sitewise(object):
         
         logger.info("-" * 50)
         
-        breakpoint()
+        # breakpoint()
         
         return (
             new_log_mu,
