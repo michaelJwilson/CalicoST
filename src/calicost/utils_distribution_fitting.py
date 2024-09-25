@@ -76,7 +76,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     exposure : array, (n_samples,)
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
-    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, method="nm", snapshot=True, **kwargs):
+    def __init__(self, endog, exog, weights, exposure, *args, tumor_prop=None, method="nm", snapshot=True, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
@@ -156,6 +156,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
 
         self.exog_names.append(ext_param_name)
 
+        # TODO
         method = self.method if start_params is None else "nm"
         
         if start_params is None:
@@ -216,6 +217,8 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         np.set_printoptions(precision=3)
 
         if write_chain:
+            logger.info(f"Writing chain to {final_path}")
+            
             with open(tmp_path) as fin:
                 with gzip.open(final_path, "wt") as fout:
                     fout.write(
@@ -395,10 +398,10 @@ class Weighted_BetaBinom_mix(WeightedModel):
 
 class Weighted_BetaBinom_fixdispersion(WeightedModel):
     ninstance = 0
-
+    
     # NB custom __init__ required to handle tau.
-    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, **kwargs):
-        super().__init__(endog, exog, **kwargs)
+    def __init__(self, endog, exog, tau, weights, exposure, *args, tumor_prop=None, method="nm", snapshot=True, **kwargs):
+        super().__init__(endog, exog, weights, exposure, *args, tumor_prop=tumor_prop, method=method, snapshot=snapshot, **kwargs)
 
         self.tumor_prop = tumor_prop
 
@@ -409,7 +412,7 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
         self.__post_init__()
 
         logger.info(
-            f"Initializing {self.__class__.__name__} model for endog.shape = {endog.shape}."
+            f"Initializing {self.__class__.__name__} model for endog.shape = {endog.shape} and fixed dispersion = {tau}."
         )
 
     def nloglikeobs(self, params):
@@ -423,6 +426,9 @@ class Weighted_BetaBinom_fixdispersion(WeightedModel):
     def get_default_start_params(self):
         return 0.1 * np.ones(self.exog.shape[1])
 
+    def get_ext_param_name(self):
+        return None
+    
     def __post_init__(self):
         assert self.tumor_prop is None
         
