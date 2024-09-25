@@ -1,6 +1,7 @@
 import contextlib
 import functools
 import gzip
+import dill
 import inspect
 import logging
 import os
@@ -75,7 +76,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     exposure : array, (n_samples,)
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
-    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, method="nm", **kwargs):
+    def __init__(self, endog, exog, weights, exposure, tumor_prop=None, method="nm", snapshot=True, **kwargs):
         super().__init__(endog, exog, **kwargs)
 
         self.tumor_prop = tumor_prop
@@ -93,6 +94,12 @@ class WeightedModel(GenericLikelihoodModel, ABC):
             f"Initializing {self.get_ninstance()}th instance of {self.__class__.__name__} model for endog.shape={endog.shape}, exog.shape={exog.shape} & weighted class balance={self.class_balance_weights}."
         )
 
+        if snapshot:
+            ninst = self.get_ninstance()
+            class_name = self.__class__.__name__.lower()
+            
+            self.snapshot(f"snapshots/{class_name}/{class_name}_snapshot_{ninst}.dill")
+        
     @abstractmethod
     def nloglikeobs(self, params):
         """
@@ -230,6 +237,12 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         os.remove(tmp_path)
         
         return result
+
+    def snapshot(self, fpath):
+        logger.info(f"Creating snapshot @ {fpath}")
+        
+        with open(fpath, "wb") as f:
+            dill.dump(self, f)
 
 
 class Weighted_NegativeBinomial(WeightedModel):

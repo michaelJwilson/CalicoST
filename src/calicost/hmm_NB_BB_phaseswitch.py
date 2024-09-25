@@ -515,7 +515,7 @@ class hmm_sitewise(object):
             log_gamma = compute_posterior_obs(log_alpha, log_beta)
 
             pred_states = np.argmax(log_gamma, axis=0)
-            
+            """
             if degen_tol is not None:
                 phased_log_mu = np.concatenate([log_mu, log_mu])
                 degenerate_states = np.arange(len(phased_log_mu), dtype=int)
@@ -550,7 +550,7 @@ class hmm_sitewise(object):
                 print(np.unique(updated_pred_states, return_counts=True))
 
                 pred_states = updated_pred_states
-                
+            """ 
             if last_pred_states is not None:
                 ari = adjusted_rand_score(last_pred_states, pred_states)
                 hamm = sum(last_pred_states != pred_states)
@@ -675,7 +675,7 @@ class hmm_sitewise(object):
         
         logger.info("-" * 50)
         
-        # breakpoint()
+        breakpoint()
         
         return (
             new_log_mu,
