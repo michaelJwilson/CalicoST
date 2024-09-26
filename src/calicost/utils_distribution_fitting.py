@@ -16,6 +16,7 @@ import scipy.integrate
 import scipy.stats
 import statsmodels
 import statsmodels.api as sm
+from scipy.optimize import minimize
 from numba import jit, njit
 from scipy import linalg, special
 from scipy.special import loggamma, logsumexp
@@ -77,8 +78,11 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         Multiplication constant outside the exponential term. In scRNA-seq or SRT data, this term is the total UMI count per cell/spot.
     """
     def __init__(self, endog, exog, weights, exposure, *args, tumor_prop=None, method="nm", snapshot=True, **kwargs):
-        super().__init__(endog, exog, **kwargs)
+        # super().__init__(endog, exog, **kwargs)
 
+        self.endog = endog
+        self.exog = exog
+        
         self.tumor_prop = tumor_prop
         self.weights = weights
         self.exposure = exposure
@@ -154,10 +158,10 @@ class WeightedModel(GenericLikelihoodModel, ABC):
     ):
         ext_param_name = self.get_ext_param_name()
 
-        self.exog_names.append(ext_param_name)
+        # self.exog_names.append(ext_param_name)
 
         # TODO
-        method = self.method if start_params is None else "nm"
+        method = self.method # if start_params is None else "nm"
         
         if start_params is None:
             if hasattr(self, "start_params"):
@@ -172,6 +176,9 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         logger.info(
             f"Starting {self.__class__.__name__} {method} optimization @ ({start_params_str}) {start_params}."
         )
+
+        if self.bounds is not None:
+            logger.info(f"Assuming bounds of {self.bounds}; use an appropriate solver.")
 
         start = time.time()
         
@@ -188,6 +195,7 @@ class WeightedModel(GenericLikelihoodModel, ABC):
         Path(final_path).parent.mkdir(parents=True, exist_ok=True)
 
         with save_stdout(tmp_path):
+            """
             result = super().fit(
                 start_params=start_params,
                 maxiter=maxiter,
@@ -203,19 +211,31 @@ class WeightedModel(GenericLikelihoodModel, ABC):
                 bounds=self.bounds,
                 **kwargs,
             )
-
+            """
+            result = minimize(
+                self.nloglikeobs,
+                start_params,
+                method=method,
+                bounds=self.bounds,
+                callback=self.__callback__,
+                options={"maxiter": maxiter, "disp": False}
+            )
+            
         # NB specific to nm (Nelder-Mead) optimization.
-        niter = result.mle_retvals["iterations"]
+        # niter, params = result.mle_retvals["iterations"], result.params
+        
+        niter, params = result.nit, result.x
+        
         runtime = time.time() - start
 
         np.set_printoptions(precision=6)
         
         logger.info(
-            f"{self.__class__.__name__} optimization in {runtime:.2f}s, with {niter} iterations.  Best-fit: {result.params}"
+            f"{self.__class__.__name__} optimization in {runtime:.2f}s, with {niter} iterations.  Best-fit: {params}"
         )
 
         np.set_printoptions(precision=3)
-
+        """
         if write_chain:
             logger.info(f"Writing chain to {final_path}")
             
@@ -236,10 +256,10 @@ class WeightedModel(GenericLikelihoodModel, ABC):
 
                     for line in fin:
                         fout.write(line)
-
+        """
         os.remove(tmp_path)
         
-        return result
+        return result.x
 
     def snapshot(self, fpath):
         logger.info(f"Creating snapshot @ {fpath}")
@@ -348,7 +368,7 @@ class Weighted_BetaBinom(WeightedModel):
 
     def __post_init__(self):
         self.method = "lbfgs"
-        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        self.bounds = self.exog.shape[1] * [(0., 1.)] + [(1.e-2, self.exposure.max())]
         
         assert self.tumor_prop is None
         
@@ -389,7 +409,7 @@ class Weighted_BetaBinom_mix(WeightedModel):
 
     def __post_init__(self):
         self.method = "lbfgs"
-        self.bounds = (self.get_nparams() - 1) * [(None, None)] + [(1.e-4, None)]
+        self.bounds = self.exog.shape[1] * [(0., 1.)] + [(1.e-2, self.exposure.max())]
         
         assert self.tumor_prop is not None, "Tumor proportion must be defined."
 
