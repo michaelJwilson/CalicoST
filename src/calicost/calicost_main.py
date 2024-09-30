@@ -1,3 +1,11 @@
+import warnings
+
+warnings.filterwarnings("ignore", message="Variable names are not unique. To make them unique, call `.var_names_make_unique`.")
+warnings.filterwarnings("ignore", message="FutureWarning: Keyword arguments have been passed to the optimizer that have no effect.")
+warnings.filterwarnings("ignore", message="df_model + k_constant + k_extra differs from k_params")
+warnings.filterwarnings("ignore", message="df_resid differs from nobs - k_params")
+warnings.filterwarnings("ignore", message="more exog_names than parameters")
+
 import sys
 import numpy as np
 import scipy
@@ -39,7 +47,6 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)
-
 
 def main(configuration_file):
     start = datetime.datetime.now()
@@ -83,7 +90,104 @@ def main(configuration_file):
         smooth_mat,
         exp_counts,
     ) = run_parse_n_load(config)
+    """
+    if single_tumor_prop is not None:
+        normal_frac = np.mean(single_tumor_prop < 0.2)
+    
+        logger.info(f"****  ESTIMATING NB EMISSION DISPERSION FOR NORMAL SPOTS ({normal_frac:.3f} fraction) ****")
 
+        for prop_threshold in np.arange(0.05, 0.6, 0.05):
+            normal_candidate = (single_tumor_prop < prop_threshold)
+            
+            if np.sum(copy_single_X_rdr[:, (normal_candidate==True)]) > single_X.shape[0] * 200:
+                break
+
+        index_normal = np.where(normal_candidate)[0]
+        
+        lengths, single_X, single_base_nb_mean, single_total_bb_RD, log_sitewise_transmat, df_gene_snp = bin_selection_basedon_normal(
+            df_gene_snp,
+            single_X,
+            single_base_nb_mean,
+            single_total_bb_RD,
+            config["nu"],
+            config["logphase_shift"],
+            index_normal,
+            config["geneticmap_file"]
+        )
+        
+        assert df_bininfo.shape[0] == copy_single_X_rdr.shape[0]
+
+        df_bininfo = genesnp_to_bininfo(df_gene_snp)
+        copy_single_X_rdr = copy.copy(single_X[:,0,:])
+        
+        # filter out high-UMI DE genes, which may bias RDR estimates
+        copy_single_X_rdr, _ = filter_de_genes_tri(
+            exp_counts,
+            df_bininfo,
+            normal_candidate,
+            sample_list=sample_list,
+            sample_ids=sample_ids
+        )
+        
+        MIN_NORMAL_COUNT_PERBIN = 20
+        
+        bidx_inconfident = np.where(
+            np.sum(copy_single_X_rdr[:, (normal_candidate==True)], axis=1) < MIN_NORMAL_COUNT_PERBIN
+        )[0]
+        
+        rdr_normal = np.sum(copy_single_X_rdr[:, (normal_candidate==True)], axis=1)
+        rdr_normal[bidx_inconfident] = 0
+        rdr_normal = rdr_normal / np.sum(rdr_normal)
+
+        # NB avoid ill-defined distributions if normal has 0 count in that bin.
+        copy_single_X_rdr[bidx_inconfident, :] = 0
+        copy_single_base_nb_mean = rdr_normal.reshape(-1,1) @ np.sum(copy_single_X_rdr, axis=0).reshape(1,-1)
+
+        single_X[:,0,:] = copy_single_X_rdr
+        single_base_nb_mean = copy_single_base_nb_mean
+        
+        X, base_nb_mean, total_bb_RD = merge_pseudobulk_by_index(
+            single_X,
+            single_base_nb_mean,
+            single_total_bb_RD,
+            [ np.where(single_tumor_prop < 0.2)[0] ],
+        )
+        
+        n_obs, _, n_spots = X.shape
+    
+        unique_values_nb, mapping_matrices_nb = construct_unique_matrix(
+            X[:, 0, :], base_nb_mean
+        )
+        
+        # NB gamma[i,t] = P(q_t = i | Observed, hypers),
+        # 
+        #    each normal spot assumed to exist in a single state,
+        #    for which we determine a dispersion.    
+        log_gamma = np.zeros(1 * n_obs).reshape(1, n_obs)
+
+        # TODO  why states x spots?
+        start_log_mu = np.vstack([np.zeros(1) for r in range(n_spots)]).T
+        
+        # NB replicate previous default
+        alphas = 0.1 * np.ones((1, n_spots))
+
+        _, new_alphas = (
+            update_emission_params_nb_nophasing_uniqvalues(
+                unique_values_nb,
+                mapping_matrices_nb,
+                log_gamma,
+                alphas,
+                start_log_mu=start_log_mu,
+                fix_NB_dispersion=False,
+                shared_NB_dispersion=True,
+            )
+        )
+
+        print(alphas)
+        print(new_alphas)
+        
+        breakpoint()
+    """
     logger.info(f"****  ESTIMATING INITIAL CLONES USING BAF ONLY  ****")
 
     # NB setting transcript & baseline count to 0 so the emission probability will be ignored.

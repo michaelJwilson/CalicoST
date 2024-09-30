@@ -7,14 +7,7 @@ from sklearn.metrics import adjusted_rand_score
 import scanpy as sc
 import anndata
 import logging
-"""
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-"""
-logger = logging.getLogger(__name__)
+
 import copy
 from pathlib import Path
 import functools
@@ -24,6 +17,7 @@ from calicost.utils_IO import *
 from calicost.phasing import *
 from calicost.arg_parse import *
 
+logger = logging.getLogger(__name__)
 
 def genesnp_to_bininfo(df_gene_snp):
     table_bininfo = (
@@ -486,7 +480,7 @@ def run_parse_n_load(config):
         scipy.sparse.save_npz(
             f"{config['output_dir']}/parsed_inputs/smooth_mat.npz", smooth_mat
         )
-        #
+        
         df_gene_snp.to_csv(
             f"{config['output_dir']}/parsed_inputs/gene_snp_info.csv.gz",
             header=True,
