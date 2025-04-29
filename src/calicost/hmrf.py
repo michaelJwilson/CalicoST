@@ -26,6 +26,7 @@ from statsmodels.tools.sm_exceptions import ValueWarning
 # Pure clone
 ############################################################
 
+@profile
 def hmrf_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_RD, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
@@ -70,7 +71,7 @@ def hmrf_reassignment_posterior(single_X, single_base_nb_mean, single_total_bb_R
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, res, pred, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
@@ -114,7 +115,7 @@ def aggr_hmrf_reassignment(single_X, single_base_nb_mean, single_total_bb_RD, re
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def hmrf_reassignment_posterior_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, res, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     N = single_X.shape[2]
     n_obs = single_X.shape[0]
@@ -157,7 +158,7 @@ def hmrf_reassignment_posterior_concatenate(single_X, single_base_nb_mean, singl
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def aggr_hmrf_reassignment_concatenate(single_X, single_base_nb_mean, single_total_bb_RD, res, pred, smooth_mat, adjacency_mat, prev_assignment, sample_ids, log_persample_weights, spatial_weight, hmmclass=hmm_sitewise, return_posterior=False):
     """
     HMRF assign spots to tumor clones.
@@ -244,7 +245,7 @@ def aggr_hmrf_reassignment_concatenate(single_X, single_base_nb_mean, single_tot
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def merge_by_minspots(assignment, res, single_total_bb_RD, min_spots_thresholds=50, min_umicount_thresholds=0, single_tumor_prop=None, threshold=0.5):
     n_clones = len(np.unique(assignment))
     if n_clones == 1:
@@ -295,7 +296,7 @@ def merge_by_minspots(assignment, res, single_total_bb_RD, min_spots_thresholds=
     merged_res["log_gamma"] = np.hstack([ res["log_gamma"][:, (c[0]*n_obs):(c[0]*n_obs+n_obs)] for c in merging_groups ])
     return merging_groups, merged_res
 
-
+@profile
 def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_bb_RD, initial_clone_index, n_states, \
     log_sitewise_transmat, coords=None, smooth_mat=None, adjacency_mat=None, sample_ids=None, max_iter_outer=5, nodepotential="max", \
     hmmclass=hmm_sitewise, params="stmp", t=1-1e-6, random_state=0, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
@@ -398,7 +399,7 @@ def hmrf_pipeline(outdir, single_X, lengths, single_base_nb_mean, single_total_b
             log_persample_weights[:, sidx] = np.where(this_persample_weight > 0, np.log(this_persample_weight), -50)
             log_persample_weights[:, sidx] = log_persample_weights[:, sidx] - scipy.special.logsumexp(log_persample_weights[:, sidx])
 
-
+@profile
 def hmrf_concatenate_pipeline(outdir, prefix, single_X, lengths, single_base_nb_mean, single_total_bb_RD, initial_clone_index, n_states, \
     log_sitewise_transmat, coords=None, smooth_mat=None, adjacency_mat=None, sample_ids=None, max_iter_outer=5, nodepotential="max", hmmclass=hmm_sitewise, \
     params="stmp", t=1-1e-6, random_state=0, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\
@@ -630,7 +631,7 @@ def hmrfmix_reassignment_posterior(single_X, single_base_nb_mean, single_total_b
     else:
         return new_assignment, single_llf, total_llf
 
-
+@profile
 def hmrfmix_pipeline(outdir, prefix, single_X, lengths, single_base_nb_mean, single_total_bb_RD, single_tumor_prop, initial_clone_index, n_states, log_sitewise_transmat, \
     coords=None, smooth_mat=None, adjacency_mat=None, sample_ids=None, max_iter_outer=5, nodepotential="max", hmmclass=hmm_sitewise, params="stmp", t=1-1e-6, random_state=0, \
     init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None,\

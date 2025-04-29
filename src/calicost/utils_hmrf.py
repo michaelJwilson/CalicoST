@@ -173,7 +173,7 @@ def multislice_adjacency(sample_ids, sample_list, coords, single_total_bb_RD, ex
     smooth_mat = scipy.sparse.csr_matrix( smooth_mat )
     return adjacency_mat, smooth_mat
 
-
+@profile
 def rectangle_initialize_initial_clone(coords, n_clones, random_state=0):
     """
     Initialize clone assignment by partition space into p * p blocks (s.t. p * p >= n_clones), and assign each block a clone id.
@@ -267,7 +267,7 @@ def merge_pseudobulk_by_index(single_X, single_base_nb_mean, single_total_bb_RD,
 
     return X, base_nb_mean, total_bb_RD
 
-
+@profile
 def rectangle_initialize_initial_clone_mix(coords, n_clones, single_tumor_prop, threshold=0.5, random_state=0, EPS=1e-8):
     np.random.seed(random_state)
     p = int(np.ceil(np.sqrt(n_clones)))
@@ -420,7 +420,7 @@ def load_hmrf_given_iteration(filename, r):
         res["barcodes"] = allres["barcodes"]
     return res
 
-
+@profile
 def identify_normal_spots(single_X, single_total_bb_RD, new_assignment, pred_cnv, p_binom, min_count, EPS_BAF=0.05, COUNT_QUANTILE=0.05, MIN_TOTAL=10):
     """
     Attributes
@@ -622,7 +622,7 @@ def identify_loh_per_clone(single_X, new_assignment, pred_cnv, p_binom, normal_c
 
     return loh_states, is_B_lost, rdr_values[loh_states], clones_hightumor
 
-
+@profile
 def estimator_tumor_proportion(single_X, single_total_bb_RD, assignments, pred_cnv, loh_states, is_B_lost, rdr_values, clone_to_consider, smooth_mat=None, MIN_TOTAL=10):
     """
     Attributes
