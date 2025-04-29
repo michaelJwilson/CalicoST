@@ -8,6 +8,7 @@ import copy
 import anndata
 import scanpy as sc
 from statsmodels.tools.sm_exceptions import ValueWarning
+from calicost.utils_profile import profile
 from calicost.utils_distribution_fitting import *
 
 

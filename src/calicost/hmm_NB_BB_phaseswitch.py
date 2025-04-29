@@ -10,6 +10,7 @@ from tqdm import trange
 import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
 import copy
+from calicost.utils_profile import profile
 from calicost.utils_hmm import *
 from calicost.utils_distribution_fitting import *
 from calicost.hmm_NB_BB_nophasing import *
@@ -20,6 +21,8 @@ import networkx as nx
 ############################################################
 # whole inference
 ############################################################
+
+logger = logging.getLogger(__name__)
 
 class hmm_sitewise(object):
     def __init__(self, params="stmp", t=1-1e-4):
@@ -226,7 +229,7 @@ class hmm_sitewise(object):
                     log_beta[i, (cumlen + t)] = mylogsumexp(buf)
             cumlen += le
         return log_beta
-    #
+    
     def run_baum_welch_nb_bb(self, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop=None, \
         fix_NB_dispersion=False, shared_NB_dispersion=False, fix_BB_dispersion=False, shared_BB_dispersion=False, \
         is_diag=False, init_log_mu=None, init_p_binom=None, init_alphas=None, init_taus=None, max_iter=100, tol=1e-4):
@@ -261,8 +264,9 @@ class hmm_sitewise(object):
         # a trick to speed up BetaBinom optimization: taking only unique values of (B allele count, total SNP covering read count)
         unique_values_nb, mapping_matrices_nb = construct_unique_matrix(X[:,0,:], base_nb_mean)
         unique_values_bb, mapping_matrices_bb = construct_unique_matrix(X[:,1,:], total_bb_RD)
+
         # EM algorithm
-        for r in trange(max_iter):
+        for r in trange(max_iter, desc="EM algorithm"):
             # E step
             if tumor_prop is None:
                 log_emission_rdr, log_emission_baf = hmm_sitewise.compute_emission_probability_nb_betabinom(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus)
@@ -306,21 +310,30 @@ class hmm_sitewise(object):
             else:
                 new_p_binom = p_binom
                 new_taus = taus
+                
             # check convergence
-            print( np.mean(np.abs( np.exp(new_log_startprob) - np.exp(log_startprob) )), \
-                np.mean(np.abs( np.exp(new_log_transmat) - np.exp(log_transmat) )), \
-                np.mean(np.abs(new_log_mu - log_mu)),\
-                np.mean(np.abs(new_p_binom - p_binom)) )
-            print( np.hstack([new_log_mu, new_p_binom]) )
+            names = ["log_startprob", "log_transmat", "log_mu", "p_binom"]
+            old_arrays = (log_startprob, log_transmat, log_mu, np.log(p_binom))
+            new_arrays = (new_log_startprob, new_log_transmat, new_log_mu, np.log(new_p_binom))
+
+            for name, new, old in zip(names, new_arrays, old_arrays):
+                result = convergence(new, old, tol)
+                logger.info(f"EM convergence ({tol:.3e} tol): {name} diff.\t{result[0]:.6e}\t{result[1]}")
+
+            # TODO HACK
+            # print( np.hstack([new_log_mu, new_p_binom]) )
+            
             if np.mean(np.abs( np.exp(new_log_transmat) - np.exp(log_transmat) )) < tol and \
                 np.mean(np.abs(new_log_mu - log_mu)) < tol and np.mean(np.abs(new_p_binom - p_binom)) < tol:
                 break
+            
             log_startprob = new_log_startprob
             log_transmat = new_log_transmat
             log_mu = new_log_mu
             alphas = new_alphas
             p_binom = new_p_binom
             taus = new_taus
+            
         return new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat, log_gamma
 
 
@@ -480,7 +493,7 @@ def viterbi_nb_bb_sitewise(X, lengths, base_nb_mean, log_mu, alphas, total_bb_RD
         cumlen += le
     return labels, merged_labels
 
-
+@profile
 def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop=None, \
     hmmclass=hmm_sitewise, params="smp", t=1-1e-6, random_state=0, \
     in_log_space=True, only_minor=False, fix_NB_dispersion=False, shared_NB_dispersion=True, fix_BB_dispersion=False, shared_BB_dispersion=True, \
@@ -492,14 +505,17 @@ def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total
     """
     # initialization
     n_spots = X.shape[2]
+    
     if ((init_log_mu is None) and ("m" in params)) or ((init_p_binom is None) and ("p" in params)):
         tmp_log_mu, tmp_p_binom = initialization_by_gmm(n_states, X, base_nb_mean, total_bb_RD, params, random_state=random_state, in_log_space=in_log_space, only_minor=only_minor)
+        
         if (init_log_mu is None) and ("m" in params):
             init_log_mu = tmp_log_mu
         if (init_p_binom is None) and ("p" in params):
             init_p_binom = tmp_p_binom
-    print(f"init_log_mu = {init_log_mu}")
-    print(f"init_p_binom = {init_p_binom}")
+            
+    logger.debug(f"Initializing Baum-Welch with init_log_mu = {init_log_mu}")
+    logger.debug(f"Initializing Baum-Welch with init_p_binom = {init_p_binom}")
     
     # fit HMM-NB-BetaBinom
     # new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat = hmmmodel.run_baum_welch_nb_bb(X, lengths, \
@@ -510,13 +526,31 @@ def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total
     #     max_iter=max_iter, tol=tol)
     hmmmodel = hmmclass(params=params, t=t)
     remain_kwargs = {k:v for k,v in kwargs.items() if k in ["lambd", "sample_length", "log_gamma"]}
-    new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat, log_gamma = hmmmodel.run_baum_welch_nb_bb(X, lengths, \
-        n_states, base_nb_mean, total_bb_RD, log_sitewise_transmat, tumor_prop, \
-        fix_NB_dispersion=fix_NB_dispersion, shared_NB_dispersion=shared_NB_dispersion, \
-        fix_BB_dispersion=fix_BB_dispersion, shared_BB_dispersion=shared_BB_dispersion, \
-        is_diag=is_diag, init_log_mu=init_log_mu, init_p_binom=init_p_binom, init_alphas=init_alphas, init_taus=init_taus, \
-        max_iter=max_iter, tol=tol, **remain_kwargs)
+    
+    new_log_mu, new_alphas, new_p_binom, new_taus, new_log_startprob, new_log_transmat, log_gamma = hmmmodel.run_baum_welch_nb_bb(
+        X,
+        lengths,
+        n_states,
+        base_nb_mean,
+        total_bb_RD,
+        log_sitewise_transmat,
+        tumor_prop,
+        fix_NB_dispersion=fix_NB_dispersion,
+        shared_NB_dispersion=shared_NB_dispersion,
+        fix_BB_dispersion=fix_BB_dispersion,
+        shared_BB_dispersion=shared_BB_dispersion,
+        is_diag=is_diag,
+        init_log_mu=init_log_mu,
+        init_p_binom=init_p_binom,
+        init_alphas=init_alphas,
+        init_taus=init_taus,
+        max_iter=max_iter,
+        tol=tol,
+        **remain_kwargs
+    )
 
+    logger.info("Solved Baum-Welch.  Computing Likelihood.")
+    
     # likelihood
     if tumor_prop is None:
         log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom(X, base_nb_mean, new_log_mu, new_alphas, total_bb_RD, new_p_binom, new_taus)
@@ -524,20 +558,25 @@ def pipeline_baum_welch(output_prefix, X, lengths, n_states, base_nb_mean, total
     else:
         if ("m" in params) and ("sample_length" in kwargs):
             logmu_shift = []
+            
             for c in range(len(kwargs["sample_length"])):
                 this_pred_cnv = np.argmax(log_gamma[:,np.sum(kwargs["sample_length"][:c]):np.sum(kwargs["sample_length"][:(c+1)])], axis=0)%n_states
                 logmu_shift.append( scipy.special.logsumexp(new_log_mu[this_pred_cnv,:] + np.log(kwargs["lambd"]).reshape(-1,1), axis=0) )
+                
             logmu_shift = np.vstack(logmu_shift)
             log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, new_log_mu, new_alphas, total_bb_RD, new_p_binom, new_taus, tumor_prop, logmu_shift=logmu_shift, sample_length=kwargs["sample_length"])
         else:
             log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, new_log_mu, new_alphas, total_bb_RD, new_p_binom, new_taus, tumor_prop)
+            
         # log_emission_rdr, log_emission_baf = hmmclass.compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, new_log_mu, new_alphas, total_bb_RD, new_p_binom, new_taus, tumor_prop)
         log_emission = log_emission_rdr + log_emission_baf
+        
     log_alpha = hmmclass.forward_lattice(lengths, new_log_transmat, new_log_startprob, log_emission, log_sitewise_transmat)
     llf = np.sum(scipy.special.logsumexp(log_alpha[:,np.cumsum(lengths)-1], axis=0))
 
     log_beta = hmmclass.backward_lattice(lengths, new_log_transmat, new_log_startprob, log_emission, log_sitewise_transmat)
     log_gamma = compute_posterior_obs(log_alpha, log_beta)
+    
     pred = np.argmax(log_gamma, axis=0)
     pred_cnv = pred % n_states
 
@@ -683,8 +722,12 @@ def similarity_components_rdrbaf_neymanpearson(X, base_nb_mean, total_bb_RD, res
                     t_neymanpearson = eval_neymanpearson_rdrbaf(log_emission_rdr[:,:,c1], log_emission_baf[:,:,c1], reshaped_pred[c1,:], log_emission_rdr[:,:,c2], log_emission_baf[:,:,c2], reshaped_pred[c2,:], bidx, n_states, res, p)
                 elif "p" in params:
                     t_neymanpearson = eval_neymanpearson_bafonly(log_emission_baf[:,:,c1], reshaped_pred[c1,:], log_emission_baf[:,:,c2], reshaped_pred[c2,:], bidx, n_states, res, p)
-                print(c1, c2, p, len(bidx), t_neymanpearson)
+
+                # TODO HACK
+                # logger.info(c1, c2, p, len(bidx), t_neymanpearson)
+                
                 all_test_statistics.append( [c1, c2, p, t_neymanpearson] )
+                
                 if len(bidx) >= minlength:
                     list_t_neymanpearson.append(t_neymanpearson)
             if len(list_t_neymanpearson) == 0 or np.max(list_t_neymanpearson) < threshold:
@@ -716,7 +759,7 @@ def similarity_components_rdrbaf_neymanpearson(X, base_nb_mean, total_bb_RD, res
     new_assignment = np.array([map_clone_id[x] for x in res["new_assignment"]])
     merged_res = copy.copy(res)
     merged_res["new_assignment"] = new_assignment
-    merged_res["total_llf"] = np.NAN
+    merged_res["total_llf"] = np.nan
     merged_res["pred_cnv"] = np.concatenate([ res["pred_cnv"][(c[0]*n_obs):(c[0]*n_obs+n_obs)] for c in merging_groups ])
     merged_res["log_gamma"] = np.hstack([ res["log_gamma"][:, (c[0]*n_obs):(c[0]*n_obs+n_obs)] for c in merging_groups ])
     return merging_groups, merged_res
@@ -740,7 +783,7 @@ def combine_similar_states_across_clones(X, base_nb_mean, total_bb_RD, res, para
                     c_change = c2 if c_keep == c1 else c1
                     bidx = np.where( (reshaped_pred_cnv[c1,:]==p1) & (reshaped_pred_cnv[c2,:]==p2) )[0]
                     res['pred_cnv'][(c_change*n_obs):(c_change*n_obs+n_obs)][bidx] = res['pred_cnv'][(c_keep*n_obs):(c_keep*n_obs+n_obs)][bidx]
-                    print(f"Merging states {[p1,p2]} in clone {c1} and clone {c2}. NP statistics = {t_neymanpearson}")
+                    logger.info(f"Merging states {[p1,p2]} in clone {c1} and clone {c2}. NP statistics = {t_neymanpearson}")
     return res
 
 
