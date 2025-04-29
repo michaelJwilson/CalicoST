@@ -70,7 +70,7 @@ class Weighted_NegativeBinomial(GenericLikelihoodModel):
         self.exposure = exposure
         self.seed = seed
 
-    @profile
+    # @profile
     def nloglikeobs(self, params):
         nb_mean = np.exp(self.exog @ params[:-1]) * self.exposure
         nb_std = np.sqrt(nb_mean + params[-1] * nb_mean**2)
@@ -151,16 +151,14 @@ class Weighted_BetaBinom(GenericLikelihoodModel):
         self.weights = weights
         self.exposure = exposure
 
-    @profile
+    # @profile
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1]) * params[-1]
         b = self.exog @ (1. - params[:-1]) * params[-1]
-        
-        llf = scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b)
-        # llf = calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b)
-        
+
         # NB negative sum log likelihood.
-        return -llf.dot(self.weights)
+        # return -scipy.stats.betabinom.logpmf(self.endog, self.exposure, a, b).dot(self.weights)
+        return -calicostem.bb(self.endog.astype(float), self.exposure.astype(float), a, b).dot(self.weights)
 
     def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
         self.exog_names.append("tau")
@@ -185,7 +183,7 @@ class Weighted_BetaBinom_mix(GenericLikelihoodModel):
         self.exposure = exposure
         self.tumor_prop = tumor_prop
 
-    @profile
+    # @profile
     def nloglikeobs(self, params):
         a = (self.exog @ params[:-1] * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
         b = ((1 - self.exog @ params[:-1]) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * params[-1]
@@ -212,7 +210,7 @@ class Weighted_BetaBinom_fixdispersion(GenericLikelihoodModel):
         self.weights = weights
         self.exposure = exposure
 
-    @profile
+    # @profile
     def nloglikeobs(self, params):
         a = (self.exog @ params) * self.tau
         b = (1 - self.exog @ params) * self.tau
@@ -240,7 +238,7 @@ class Weighted_BetaBinom_fixdispersion_mix(GenericLikelihoodModel):
         self.exposure = exposure
         self.tumor_prop = tumor_prop
 
-    @profile
+    # @profile
     def nloglikeobs(self, params):
         a = (self.exog @ params * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau
         b = ((1 - self.exog @ params) * self.tumor_prop + 0.5 * (1 - self.tumor_prop)) * self.tau

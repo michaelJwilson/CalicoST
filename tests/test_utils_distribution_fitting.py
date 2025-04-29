@@ -15,39 +15,39 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 def test_Weighted_BetaBinom(benchmark):
+    """
+    x2 speedup of Rust vs scipy.
+    """
     np.random.seed(314)
     
-    nclass, len_exog = 5, 1_000
+    nclass, len_exog = 5, 100_000
     
-    tau = 200.
-    
+    tau = 20.
     ps = 0.5 + 0.2 * np.random.uniform(size=nclass)
 
     aa = tau * ps
     bb = tau * (1. - ps)
-    
+
+    params = np.concatenate([ps, np.array([tau])])
+        
     state = np.random.randint(low=0, high=nclass, size=len_exog)
     exog = OneHotEncoder().fit_transform(state.reshape(-1, 1)).toarray()
 
     exposure = np.random.randint(low=10, high=25, size=len_exog)   
     endog = np.array([scipy.stats.betabinom.rvs(xp, aa[ss], bb[ss]) for ss, xp in zip(state, exposure)])
-
-    weights = 0.5 + 0.1 * np.random.uniform(size=len_exog)
     
-    bb = Weighted_BetaBinom(endog, exog, weights, exposure)
-
-    params = np.concatenate([aa, np.array([tau])])
+    weights = 0.8 + 0.1 * np.random.uniform(size=len_exog)
+    
+    beta_binom = Weighted_BetaBinom(endog, exog, weights, exposure)
     
     def call():
-        return bb.nloglikeobs(params)
+        return beta_binom.nloglikeobs(params)
 
-    result = call()
-    # result = benchmark(call)
+    aa = np.array([aa[ss] for ss in state])
+    bb = np.array([bb[ss] for ss in state])
+    
+    exp = -scipy.stats.betabinom.logpmf(endog, exposure, aa, bb).dot(weights)
+    result = benchmark(call)
 
-    print(result)
-    
-    # NB regression testing
-    # exp = 327.28956683765364
-    
-    # assert np.allclose(result.params.sum(), exp)
-    
+    assert np.allclose(exp, result)
+    assert np.allclose(result, 199240.50086169314)
