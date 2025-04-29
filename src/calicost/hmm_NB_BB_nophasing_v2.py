@@ -455,14 +455,20 @@ class hmm_nophasing_v2(object):
                         this_pred_cnv = np.argmax(log_gamma[:,np.sum(kwargs["sample_length"][:c]):np.sum(kwargs["sample_length"][:(c+1)])], axis=0)%n_states
                         logmu_shift.append( scipy.special.logsumexp(log_mu[this_pred_cnv,:] + np.log(kwargs["lambd"]).reshape(-1,1), axis=0) )
                     logmu_shift = np.vstack(logmu_shift)
-                    log_emission_rdr, log_emission_baf = hmm_nophasing_v2.compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, logmu_shift=logmu_shift, sample_length=kwargs["sample_length"])
+                    
+                    log_emission_rdr, log_emission_baf = hmm_nophasing_v2.compute_emission_probability_nb_betabinom_mix(
+                        X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop, logmu_shift=logmu_shift, sample_length=kwargs["sample_length"]
+                    )
                 else:
                     log_emission_rdr, log_emission_baf = hmm_nophasing_v2.compute_emission_probability_nb_betabinom_mix(X, base_nb_mean, log_mu, alphas, total_bb_RD, p_binom, taus, tumor_prop)
+                    
                 log_emission = log_emission_rdr + log_emission_baf
+                
             log_alpha = hmm_nophasing_v2.forward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat)
             log_beta = hmm_nophasing_v2.backward_lattice(lengths, log_transmat, log_startprob, log_emission, log_sitewise_transmat)
             log_gamma = compute_posterior_obs(log_alpha, log_beta)
             log_xi = compute_posterior_transition_nophasing(log_alpha, log_beta, log_transmat, log_emission)
+            
             # M step
             if "s" in self.params:
                 new_log_startprob = update_startprob_nophasing(lengths, log_gamma)
