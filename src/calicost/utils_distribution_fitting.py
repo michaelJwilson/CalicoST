@@ -16,9 +16,9 @@ import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
 import os
 
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
+# os.environ["OPENBLAS_NUM_THREADS"] = "1"
+# os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def convert_params(mean, std):
@@ -31,6 +31,15 @@ def convert_params(mean, std):
     n = mean*p/(1.0 - p)
     return n, p
 
+def convert_params_var(mean, var):
+    """
+    Convert mean/dispersion parameterization of a negative binomial to the ones scipy supports
+    See https://mathworld.wolfram.com/NegativeBinomialDistribution.html
+    """
+    p = mean / var
+    n = mean * p / (1. - p)
+
+    return n, p
 
 class Weighted_NegativeBinomial(GenericLikelihoodModel):
     """
